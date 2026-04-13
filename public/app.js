@@ -50,7 +50,12 @@ async function fetchHotels(q) {
 
     dropdown.innerHTML = hotels.map((h, i) => `
       <div class="autocomplete-item" data-name="${esc(h.name)}" data-dest="${esc(h.destination)}">
-        <div>
+        ${h.photo
+          ? `<img class="autocomplete-item-photo" src="${esc(h.photo)}" alt="${esc(h.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''
+        }
+        <div class="autocomplete-item-placeholder" style="${h.photo ? 'display:none' : 'display:flex'}">&#127976;</div>
+        <div class="autocomplete-item-text">
           <div class="autocomplete-item-name">${esc(h.name)}</div>
           <div class="autocomplete-item-he">${esc(h.nameHe)}</div>
         </div>
