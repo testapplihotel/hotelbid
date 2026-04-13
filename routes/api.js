@@ -1,6 +1,9 @@
 const express = require('express');
+const path = require('path');
 const { getDb } = require('../db/database');
 const { scanAlert } = require('../scanner');
+
+const hotels = require(path.join(__dirname, '..', 'data', 'hotels.json'));
 
 const router = express.Router();
 
@@ -139,6 +142,21 @@ router.get('/scraper-status', (req, res) => {
     GROUP BY source
   `).all(since);
   res.json(stats);
+});
+
+// GET /api/hotels?q=term — hotel autocomplete
+router.get('/hotels', (req, res) => {
+  const q = (req.query.q || '').toLowerCase().trim();
+  if (q.length < 2) return res.json([]);
+
+  const results = hotels.filter(h =>
+    h.name.toLowerCase().includes(q) ||
+    h.nameHe.includes(q) ||
+    h.chain.toLowerCase().includes(q) ||
+    h.destination.toLowerCase().includes(q)
+  ).slice(0, 12);
+
+  res.json(results);
 });
 
 module.exports = router;

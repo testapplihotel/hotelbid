@@ -28,7 +28,16 @@
       "Bash(brew install:*)",
       "Bash(railway version:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(gh repo:*)",
+      "Bash(export RAILWAY_TOKEN=\"0f812110-9d94-4fd3-a0ea-9b1c51da53ba\")",
+      "Bash(railway whoami:*)",
+      "Bash(RAILWAY_TOKEN=\"0f812110-9d94-4fd3-a0ea-9b1c51da53ba\" railway whoami:*)",
+      "Bash(curl:*)",
+      "Bash(python3 -c \"import sys,json; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)['data']['__type']['fields']]\")",
+      "Bash(RAILWAY_TOKEN=\"0f812110-9d94-4fd3-a0ea-9b1c51da53ba\" railway link:*)",
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(python3 -c \"import sys,json; [print\\(h['name']\\) for h in json.load\\(sys.stdin\\)]\")"
     ]
   }
 }

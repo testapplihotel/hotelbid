@@ -1,94 +1,129 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HotelBid — Set Your Price, We Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1>HotelBid</h1>
+
+  <!-- Hero Header -->
+  <header class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="logo">
+        <span class="logo-icon">&#9830;</span>
+        <h1>Hotel<span class="gold">Bid</span></h1>
+      </div>
       <p class="tagline">Set your price. We watch. We book.</p>
+      <p class="sub-tagline">Reverse hotel booking for Israel's best hotels</p>
     </div>
   </header>
 
-  <main class="container">
-    <!-- Create Alert Form -->
-    <section class="card" id="create-section">
-      <h2>Create New Alert</h2>
-      <form id="alert-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="hotel_name">Hotel Name</label>
-            <input type="text" id="hotel_name" name="hotel_name" placeholder="e.g. Isrotel Sport Club" required>
+  <main>
+    <!-- Create Alert -->
+    <section class="section" id="create-section">
+      <div class="container">
+        <div class="form-card">
+          <div class="form-header">
+            <h2>Create Price Alert</h2>
+            <p>Tell us your budget — we'll book when the price drops</p>
           </div>
-          <div class="form-group">
-            <label for="destination">Destination</label>
-            <input type="text" id="destination" name="destination" placeholder="e.g. Eilat">
-          </div>
-          <div class="form-group">
-            <label for="check_in">Check-in</label>
-            <input type="date" id="check_in" name="check_in" required>
-          </div>
-          <div class="form-group">
-            <label for="check_out">Check-out</label>
-            <input type="date" id="check_out" name="check_out" required>
-          </div>
-          <div class="form-group">
-            <label for="adults">Adults</label>
-            <input type="number" id="adults" name="adults" value="2" min="1" max="10">
-          </div>
-          <div class="form-group">
-            <label for="children">Children</label>
-            <input type="number" id="children" name="children" value="0" min="0" max="10">
-          </div>
-          <div class="form-group">
-            <label for="target_price">Target Price (NIS)</label>
-            <input type="number" id="target_price" name="target_price" placeholder="14000" required>
-          </div>
-          <div class="form-group">
-            <label for="user_email">Your Email</label>
-            <input type="email" id="user_email" name="user_email" value="test@hotelbid.com">
-          </div>
+          <form id="alert-form" autocomplete="off">
+            <div class="form-grid">
+              <div class="form-group form-group-wide autocomplete-wrap">
+                <label for="hotel_name">Hotel</label>
+                <input type="text" id="hotel_name" name="hotel_name" placeholder="Start typing a hotel name..." required>
+                <div class="autocomplete-dropdown" id="hotel-dropdown"></div>
+              </div>
+              <div class="form-group">
+                <label for="destination">Destination</label>
+                <input type="text" id="destination" name="destination" placeholder="e.g. Eilat" readonly>
+              </div>
+              <div class="form-group">
+                <label for="check_in">Check-in</label>
+                <input type="date" id="check_in" name="check_in" required>
+              </div>
+              <div class="form-group">
+                <label for="check_out">Check-out</label>
+                <input type="date" id="check_out" name="check_out" required>
+              </div>
+              <div class="form-group">
+                <label for="adults">Adults</label>
+                <input type="number" id="adults" name="adults" value="2" min="1" max="10">
+              </div>
+              <div class="form-group">
+                <label for="children">Children</label>
+                <input type="number" id="children" name="children" value="0" min="0" max="10">
+              </div>
+              <div class="form-group">
+                <label for="target_price">Max Budget (NIS)</label>
+                <div class="input-icon-wrap">
+                  <span class="input-icon">&#8362;</span>
+                  <input type="number" id="target_price" name="target_price" placeholder="14,000" required class="input-with-icon">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="user_email">Email</label>
+                <input type="email" id="user_email" name="user_email" placeholder="your@email.com">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-gold btn-lg" id="submit-btn">
+              <span class="btn-icon">&#9830;</span> Create Alert
+            </button>
+          </form>
         </div>
-        <button type="submit" class="btn btn-primary">Create Alert</button>
-      </form>
+      </div>
     </section>
 
     <!-- Active Alerts -->
-    <section class="card" id="alerts-section">
-      <div class="section-header">
-        <h2>My Alerts</h2>
-        <button class="btn btn-secondary" onclick="loadAlerts()">Refresh</button>
+    <section class="section section-dark" id="alerts-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>My Alerts</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadAlerts()">Refresh</button>
+        </div>
+        <div id="alerts-list"></div>
       </div>
-      <div id="alerts-list"></div>
     </section>
 
     <!-- Bookings -->
-    <section class="card" id="bookings-section">
-      <h2>Booking History</h2>
-      <div id="bookings-list"></div>
+    <section class="section" id="bookings-section">
+      <div class="container">
+        <h2>Booking History</h2>
+        <div id="bookings-list"></div>
+      </div>
     </section>
 
     <!-- Price Chart Modal -->
     <div id="chart-modal" class="modal" style="display:none">
-      <div class="modal-content card">
+      <div class="modal-content">
         <div class="modal-header">
           <h3 id="chart-title">Price History</h3>
-          <button class="btn-close" onclick="closeChart()">&times;</button>
+          <button class="modal-close" onclick="closeChart()">&times;</button>
         </div>
-        <canvas id="price-chart"></canvas>
+        <div class="chart-wrap">
+          <canvas id="price-chart"></canvas>
+        </div>
       </div>
     </div>
   </main>
 
   <footer>
     <div class="container">
-      <p>HotelBid &copy; 2026 — Free cancellation only</p>
+      <div class="footer-inner">
+        <div class="footer-logo">
+          <span class="logo-icon-sm">&#9830;</span> Hotel<span class="gold">Bid</span>
+        </div>
+        <p>Free cancellation only &middot; All prices in NIS</p>
+        <p class="footer-copy">&copy; 2026 HotelBid. Scanning 10+ Israeli travel sites every 2 hours.</p>
+      </div>
     </div>
   </footer>
 
