@@ -140,14 +140,16 @@
     "nameHe": "לאונרדו פלאזה אילת",
     "chain": "fattal",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/7/0/106/188/169/leonardo-plaza-eilat-view_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Leonardo Club Eilat",
     "nameHe": "לאונרדו קלאב אילת",
     "chain": "fattal",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://media.leonardo-hotels.com/static.leonardo-hotels.com/image/leonardo-club-eilat-hotel-entrance_c632b733030610cd68d7df9f59c9e8ef.jpg"
   },
   {
     "name": "U Magic Palace Eilat",
@@ -162,14 +164,16 @@
     "nameHe": "יו ספלאש ריזורט אילת",
     "chain": "fattal",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://pix10.agoda.net/hotelImages/842/8425/8425_15010718540024341434.jpg?ca=3&ce=1&s=414x232"
   },
   {
     "name": "U Coral Beach Club Eilat",
     "nameHe": "יו קורל ביץ' קלאב אילת",
     "chain": "fattal",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/99233326.jpg?k=d55cf8faf71f4cf6808e2fa1ff472d83a0f94abbb9408217811744c20743d3f8&o="
   },
   {
     "name": "Herods Palace Eilat",
@@ -200,14 +204,16 @@
     "nameHe": "לאונרדו ים המלח",
     "chain": "fattal",
     "destination": "Dead Sea",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://media.leonardo-hotels.com/static.leonardo-hotels.com/image/leonardo-club-dead-sea-slides-02-300-dpi_58edfd11ac06cfe609fce8d0c6a2e50b.jpg"
   },
   {
     "name": "Leonardo Privilege Dead Sea",
     "nameHe": "לאונרדו פריוויליג' ים המלח",
     "chain": "fattal",
     "destination": "Dead Sea",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://www.hotels-of-israel.com/accor/novotelthalasa/LDS_building_1.jpg"
   },
   {
     "name": "Leonardo Club Dead Sea",
@@ -246,7 +252,8 @@
     "nameHe": "לאונרדו ירושלים",
     "chain": "fattal",
     "destination": "Jerusalem",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/7/0/114/754/418/leonardo-jerusalem-hotel-entrance_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "NYX Hotel Tel Aviv",
@@ -301,168 +308,192 @@
     "nameHe": "לאונרדו אשקלון",
     "chain": "fattal",
     "destination": "Ashkelon",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://pix10.agoda.net/hotelImages/567/567903/567903_14050623170019325859.jpg?ca=2&ce=1&s=1024x768"
   },
   {
     "name": "Leonardo Negev Beer Sheva",
     "nameHe": "לאונרדו נגב באר שבע",
     "chain": "fattal",
     "destination": "Beer Sheva",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2c/1f/c5/c0/leonardo-negev-beer-sheva.jpg?w=900&h=500&s=1"
   },
   {
     "name": "Leonardo Boutique Lara Antalya",
     "nameHe": "לאונרדו בוטיק לארה אנטליה",
     "chain": "fattal",
     "destination": "Antalya",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/7/0/106/177/896/leonardo-boutique-telaviv-hotel-entrance-1_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Dan Eilat",
     "nameHe": "דן אילת",
     "chain": "dan",
     "destination": "Eilat",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://www.danhotels.com/sites/default/files/styles/medium_12_25/public/2023-01/DE-500x240_0.jpg?itok=Mr6ufggl"
   },
   {
     "name": "Dan Panorama Eilat",
     "nameHe": "דן פנורמה אילת",
     "chain": "dan",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/476640903.jpg?k=91963a544f8a40829fb7fc73df3c58e4433cbab66e27888dce0151831afed449&o="
   },
   {
     "name": "Dan Jerusalem",
     "nameHe": "דן ירושלים",
     "chain": "dan",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/ik-seo/https://media.iceportal.com/39989/photos/3201781_XL/Dan-Jerusalem-Hotel-Exterior.jpg?tr=w-780%2Ch-437%2Cfo-auto"
   },
   {
     "name": "Dan Panorama Jerusalem",
     "nameHe": "דן פנורמה ירושלים",
     "chain": "dan",
     "destination": "Jerusalem",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://media.iceportal.com/40008/photos/3202188_XL.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Dan Tel Aviv",
     "nameHe": "דן תל אביב",
     "chain": "dan",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://www.americaisraeltours.com/wp-content/uploads/2024/11/Dan-Tel-Aviv-Hotel-Exterior.jpg"
   },
   {
     "name": "Dan Panorama Tel Aviv",
     "nameHe": "דן פנורמה תל אביב",
     "chain": "dan",
     "destination": "Tel Aviv",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://images.trvl-media.com/lodging/1000000/10000/700/672/w473h744x0y0-f1e4677a.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Dan Carmel Haifa",
     "nameHe": "דן כרמל חיפה",
     "chain": "dan",
     "destination": "Haifa",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://q-xx.bstatic.com/xdata/images/hotel/max500/33394867.jpg?k=0109316e302464216a10dd7340e4de2e488417964fbc1208e296998b9caa4674&o="
   },
   {
     "name": "Dan Panorama Haifa",
     "nameHe": "דן פנורמה חיפה",
     "chain": "dan",
     "destination": "Haifa",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://images.trvl-media.com/lodging/1000000/20000/16400/16355/b290cb22.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Dan Accadia Herzliya",
     "nameHe": "דן אכדיה הרצליה",
     "chain": "dan",
     "destination": "Herzliya",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/13737764.jpg?k=ec194dd96e26fb6c21205cd5f7bac63ed1c8d7f1c2273d2e713934558401587a&o="
   },
   {
     "name": "Dan Caesarea",
     "nameHe": "דן קיסריה",
     "chain": "dan",
     "destination": "Caesarea",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://pix10.agoda.net/hotelImages/66866/0/2568c79c1527de0588a0092dc0a54230.jpeg?ce=0&s=414x232"
   },
   {
     "name": "Link Hotel & Hub Tel Aviv",
     "nameHe": "לינק מלון תל אביב",
     "chain": "dan",
     "destination": "Tel Aviv",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://images.trvl-media.com/lodging/23000000/22500000/22499700/22499699/5eeaa296.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Brown Beach House Tel Aviv",
     "nameHe": "בראון ביץ' האוס תל אביב",
     "chain": "brown",
     "destination": "Tel Aviv",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://brownhotels.com/octopus/Upload/images/Resorts/1-2-.png"
   },
   {
     "name": "Brown TLV Urban Hotel",
     "nameHe": "בראון אורבן תל אביב",
     "chain": "brown",
     "destination": "Tel Aviv",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://media.cntraveler.com/photos/53dac3d56dec627b14a012d6/16:9/w_2560%2Cc_limit/brown-tlv-tel-aviv-israel-112569-3.jpg"
   },
   {
     "name": "Brown Seaside Tel Aviv",
     "nameHe": "בראון סיסייד תל אביב",
     "chain": "brown",
     "destination": "Tel Aviv",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://brownhotels.com/octopus/Upload/images/Resorts/1-2-.png"
   },
   {
     "name": "Dave Gordon Tel Aviv",
     "nameHe": "דייב גורדון תל אביב",
     "chain": "brown",
     "destination": "Tel Aviv",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://images.trvl-media.com/lodging/20000000/19730000/19721300/19721226/95ea1027.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Brown JLM Hotel Jerusalem",
     "nameHe": "בראון ירושלים",
     "chain": "brown",
     "destination": "Jerusalem",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/281162976.jpg?k=3ea17dfc328fc0d4508049f6a2391b0d7e5a26f7de1d486f7bbfc207ce63365f&o="
   },
   {
     "name": "Astral Village Eilat",
     "nameHe": "אסטרל וילג' אילת",
     "chain": "astral",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/ik-seo/http://images.ntmllc.com/v4/hotel/404/404667/404667_EXT_Z1B286/Astral-Village-Exterior.JPG?tr=w-1100%2Ch-654%2Cfo-auto"
   },
   {
     "name": "Astral Nirvana Eilat",
     "nameHe": "אסטרל נירוונה אילת",
     "chain": "astral",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://content.r9cdn.net/rimg/himg/4b/02/50/expedia_group-288078-7a96cfee-770686.jpg?width=500&height=350&xhint=480&yhint=333&crop=true"
   },
   {
     "name": "Astral Palma Eilat",
     "nameHe": "אסטרל פלמה אילת",
     "chain": "astral",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max500/473180612.jpg?k=2b1dded3c1450b0f5d03bf94e41abc48e8a6c762431cda3324100da5da83b5ad&o=&hp=1"
   },
   {
     "name": "Astral Coral Eilat",
     "nameHe": "אסטרל קורל אילת",
     "chain": "astral",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://astral-coral.eilat-hotels-il.com/data/Photos/OriginalPhoto/12135/1213566/1213566070/eilat-hotel-astral-nirvana-club-photo-32.JPEG"
   },
   {
     "name": "Astral Seaside Eilat",
     "nameHe": "אסטרל סיסייד אילת",
     "chain": "astral",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/http://images.ntmllc.com/v4/hotel/403/403946/403946_EXT_ZC11AC.JPG?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Crowne Plaza Eilat",
@@ -477,77 +508,88 @@
     "nameHe": "ריף אילת",
     "chain": "other",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/198729950.jpg?k=0f25fad91b8ea5e1ba92a29379fc8bac70496bcb09899833733f9d8cdc2d7cc8&o="
   },
   {
     "name": "Orchid Reef Eilat",
     "nameHe": "אורכיד ריף אילת",
     "chain": "other",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/ik-seo/http://images.ntmllc.com/v4/hotel/S03/S03931/S03931_EXT_ZA9AE0/Orchid-Reef-Hotel-Eilat-Exterior.JPG?tr=w-656%2Ch-390%2Cfo-auto"
   },
   {
     "name": "Prima Music Eilat",
     "nameHe": "פרימה מיוזיק אילת",
     "chain": "prima",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://www.prima.co.il/octopus/Upload/images/Resorts/primamusic-outdoor5simplex-360.jpg"
   },
   {
     "name": "Prima Star Eilat",
     "nameHe": "פרימה סטאר אילת",
     "chain": "prima",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://images.trvl-media.com/lodging/1000000/480000/478900/478862/9110f532.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Club Hotel Eilat",
     "nameHe": "קלאב הוטל אילת",
     "chain": "other",
     "destination": "Eilat",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://images.trvl-media.com/lodging/2000000/1580000/1580000/1579987/a0a3faed.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Queen of Sheba Eilat",
     "nameHe": "מלכת שבא אילת",
     "chain": "other",
     "destination": "Eilat",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://images.trvl-media.com/lodging/2000000/1430000/1426900/1426898/d452166b.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Hilton Eilat Queen of Sheba",
     "nameHe": "הילטון אילת מלכת שבא",
     "chain": "hilton",
     "destination": "Eilat",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://images.trvl-media.com/lodging/2000000/1430000/1426900/1426898/d452166b.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Aria Hotel Eilat",
     "nameHe": "אריה מלון אילת",
     "chain": "other",
     "destination": "Eilat",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://www.astral-hotels.com//Octopus/upload/images/resorts/dji0002-2-.jpg"
   },
   {
     "name": "David Dead Sea Resort & Spa",
     "nameHe": "דיוויד ים המלח",
     "chain": "other",
     "destination": "Dead Sea",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/633454931.jpg?k=6afcfaf47abf62a1763f56fb98ca638a66731c7e748b3d0a1d950ccbf90bc8b3&o="
   },
   {
     "name": "Lot Spa Hotel Dead Sea",
     "nameHe": "לוט ספא מלון ים המלח",
     "chain": "other",
     "destination": "Dead Sea",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/ik-seo/http://images.ntmllc.com/v4/hotel/404/404543/404543_EXT_Z5DDD6/Lot-Spa-Hotel-Exterior.jpg?tr=w-1100%2Ch-654%2Cfo-auto"
   },
   {
     "name": "Ein Gedi Hotel Dead Sea",
     "nameHe": "עין גדי מלון ים המלח",
     "chain": "other",
     "destination": "Dead Sea",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://q-xx.bstatic.com/xdata/images/hotel/max500/202295189.jpg?k=c82442a1d24047009b03bf78b18ac70602e5a185b89051af9f9882f3b73a12fa&o="
   },
   {
     "name": "Crowne Plaza Dead Sea",
@@ -562,7 +604,8 @@
     "nameHe": "רויאל רימונים ים המלח",
     "chain": "rimonim",
     "destination": "Dead Sea",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://deadsea.com/wp-content/uploads/2016/05/Royal-Rimonim-Hotel_3.jpg"
   },
   {
     "name": "Isrotel Pundak Ramon",
@@ -577,14 +620,16 @@
     "nameHe": "המלך דוד ירושלים",
     "chain": "dan",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/2/0/50/878/160/Exterior_-_Day_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Waldorf Astoria Jerusalem",
     "nameHe": "וולדורף אסטוריה ירושלים",
     "chain": "hilton",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://assets.hiltonstatic.com/hilton-asset-cache/image/upload/c_fill,w_6000,h_3371,q_90,f_auto/c_fill,w_1920,h_1078,q_90,f_auto/Imagery/Property%20Photography/Waldorf%20Astoria/J/JRSWAWA/DJI_0023.%20edited%203%20jpg%20Custom.jpg"
   },
   {
     "name": "Mamilla Hotel Jerusalem",
@@ -599,49 +644,56 @@
     "nameHe": "מצודת דוד ירושלים",
     "chain": "other",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/7/0/143/954/183/David_Citadel_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Prima Royale Jerusalem",
     "nameHe": "פרימה רויאל ירושלים",
     "chain": "prima",
     "destination": "Jerusalem",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/https://www.cfmedia.vfmleonardo.com/imageRepo/3/0/42/527/822/Prima_Royale_-_Hotel_View1_O.jpg?tr=w-1200%2Cfo-auto"
   },
   {
     "name": "Prima Kings Jerusalem",
     "nameHe": "פרימה קינגס ירושלים",
     "chain": "prima",
     "destination": "Jerusalem",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://ik.imgkit.net/3vlqs5axxjf/external/ik-seo/https://www.cfmedia.vfmleonardo.com/imageRepo/3/0/75/240/900/1117034856_2_O/Prima-Kings-Hotel-Exterior.jpg?tr=w-656%2Ch-390%2Cfo-auto"
   },
   {
     "name": "Herbert Samuel Jerusalem",
     "nameHe": "הרברט סמואל ירושלים",
     "chain": "other",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://herbertsamuel.com/wp-content/uploads/2024/02/Jerusalem-Hotel-Grounds-002.jpg"
   },
   {
     "name": "Orient Jerusalem",
     "nameHe": "אוריינט ירושלים",
     "chain": "isrotel",
     "destination": "Jerusalem",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://www.isrotelexclusivecollection.com/media/20876/249.jpg?anchor=center&mode=crop&width=243&height=180&rnd=134116581250000000"
   },
   {
     "name": "Hilton Tel Aviv",
     "nameHe": "הילטון תל אביב",
     "chain": "hilton",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://assets.hiltonstatic.com/hilton-asset-cache/image/upload/c_fill,w_1920,h_1080,q_70,f_auto,g_auto/Imagery/Property%20Photography/MultiBrand/MultiHotel/Hilton_pool_1.jpg"
   },
   {
     "name": "David InterContinental Tel Aviv",
     "nameHe": "דיוויד אינטרקונטיננטל תל אביב",
     "chain": "other",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://digital.ihg.com/is/image/ihg/intercontinental-tel-aviv-10447211707-4x3"
   },
   {
     "name": "Carlton Tel Aviv",
@@ -656,62 +708,71 @@
     "nameHe": "שרתון תל אביב",
     "chain": "other",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://cache.marriott.com/content/dam/marriott-renditions/TLVSI/tlvsi-exterior-6364-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=1336px:*"
   },
   {
     "name": "Herbert Samuel Tel Aviv",
     "nameHe": "הרברט סמואל תל אביב",
     "chain": "other",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://images.trvl-media.com/lodging/37000000/36590000/36586000/36585962/d575a073.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Prima Tel Aviv",
     "nameHe": "פרימה תל אביב",
     "chain": "prima",
     "destination": "Tel Aviv",
-    "stars": 3
+    "stars": 3,
+    "photo": "https://pix10.agoda.net/hotelImages/667/6674/6674_17060614480053502378.jpg?ca=6&ce=1&s=414x232"
   },
   {
     "name": "Setai Tel Aviv",
     "nameHe": "סטאי תל אביב",
     "chain": "other",
     "destination": "Tel Aviv",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://static-new.lhw.com/HotelImages/Final/LW5011/lw5011_177423717_790x490.jpg"
   },
   {
     "name": "Scots Hotel Tiberias",
     "nameHe": "סקוטס מלון טבריה",
     "chain": "other",
     "destination": "Tiberias",
-    "stars": 5
+    "stars": 5,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/764379176.jpg?k=03c269ef5629a96bd77aa7367fb1f36e74a9b68730ef4193f7c33368a6a7e1d9&o="
   },
   {
     "name": "Golan Hotel Tiberias",
     "nameHe": "גולן מלון טבריה",
     "chain": "other",
     "destination": "Tiberias",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/9435946.jpg?k=7635066ee995a38eab1f87ef183d212970a24a84a3d661c97498fd1aca47889b&o="
   },
   {
     "name": "Rimonim Galei Kinnereth Tiberias",
     "nameHe": "רימונים גלי כנרת טבריה",
     "chain": "rimonim",
     "destination": "Tiberias",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://q-xx.bstatic.com/xdata/images/hotel/max500/340533862.jpg?k=4935f2f3350dd6080da75fb1de64277803d051b5b93443f9fe1c9f830506b0d4&o="
   },
   {
     "name": "Leonardo Plaza Netanya",
     "nameHe": "לאונרדו פלאזה נתניה",
     "chain": "fattal",
     "destination": "Netanya",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://images.trvl-media.com/lodging/9000000/8760000/8756000/8755924/5733034c.jpg?impolicy=resizecrop&rw=575&rh=575&ra=fill"
   },
   {
     "name": "Hilton Haifa",
     "nameHe": "הילטון חיפה",
     "chain": "hilton",
     "destination": "Haifa",
-    "stars": 4
+    "stars": 4,
+    "photo": "https://content.r9cdn.net/rimg/himg/4e/13/e4/ice-56467-111326325-465050.jpg?crop=true&width=500&height=350"
   }
 ]
