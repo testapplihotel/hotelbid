@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 node server.js)",
+      "Bash(node:*)",
+      "WebFetch(domain:www.isrotel.co.il)",
+      "WebFetch(domain:www.hotels.co.il)",
+      "WebFetch(domain:www.eshet.com)",
+      "WebFetch(domain:www.hotel4u.co.il)",
+      "WebFetch(domain:www.travelist.co.il)",
+      "WebFetch(domain:www.daka90.co.il)",
+      "WebFetch(domain:res.hotels.co.il)",
+      "WebFetch(domain:www.isrotel.com)",
+      "Bash(SERPAPI_KEY=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259 node:*)",
+      "Bash(curl -s \"https://serpapi.com/search.json?engine=google_hotels&q=Isrotel+Sport+Club+Eilat&check_in_date=2026-08-02&check_out_date=2026-08-08&adults=2&children=2&currency=ILS&hl=he&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -s \"https://serpapi.com/search.json?engine=google_hotels&q=Isrotel+Sport+Club+Eilat&check_in_date=2026-08-02&check_out_date=2026-08-08&adults=2&children=2&children_ages=5,8&currency=ILS&hl=he&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -sv \"https://serpapi.com/search.json?engine=google_hotels&property_token=$\\(node -e \"const j = require\\('/tmp/serpapi_test.json'\\); process.stdout.write\\(encodeURIComponent\\(j.property_token\\)\\)\"\\)&check_in_date=2026-08-02&check_out_date=2026-08-08&adults=2&children=2&children_ages=5,8&currency=ILS&hl=he&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -s \"https://serpapi.com/search.json?engine=google_hotels&q=Isrotel+Sport+Club+Eilat&property_token=$\\(node -e \"const j = require\\('/tmp/serpapi_test.json'\\); process.stdout.write\\(encodeURIComponent\\(j.property_token\\)\\)\"\\)&check_in_date=2026-08-02&check_out_date=2026-08-08&adults=2&children=2&children_ages=5,8&currency=ILS&hl=he&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -s \"https://serpapi.com/search.json?engine=google_hotels&q=Isrotel+Sport+Club+Eilat&check_in_date=2026-04-17&check_out_date=2026-04-19&adults=2&children=2&children_ages=5,8&currency=ILS&hl=he&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -s \"https://serpapi.com/search.json?engine=google_hotels&q=hotels+in+eilat&check_in_date=2026-04-17&check_out_date=2026-04-19&adults=2&children=2&children_ages=5,8&currency=ILS&hl=en&gl=il&api_key=d01d94864c5c7b47d93cf50907f1521232cec64dac576925dba056453b047259\")",
+      "Bash(curl -s https://www.isrotel.co.il/umbraco/Surface/Search/SearchByRegion -H 'Content-Type: application/json' -H 'User-Agent: Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36' -H 'Referer: https://www.isrotel.co.il/' -X POST -d '{\"HotelCode\":\"SP\",\"StartDate\":\"02/08/2026\",\"EndDate\":\"08/08/2026\",\"Adults\":2,\"Children\":2,\"Rooms\":1}')",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000/api/alerts)",
+      "Bash(python3 -m json.tool)",
+      "Bash(sudo npm:*)",
+      "Bash(brew install:*)",
+      "Bash(railway version:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
+    ]
+  }
+}
