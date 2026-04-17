@@ -150,11 +150,17 @@ async function createAlert(e) {
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error((await res.json()).error);
+    const alert = await res.json();
+
     form.reset();
     form.querySelector('#adults').value = 2;
     form.querySelector('#children').value = 0;
     destInput.value = '';
     await loadAlerts();
+
+    // Auto-scan and show feed
+    showFeedScanning(data.hotel_name);
+    runScanAndShowFeed(alert.id, data.hotel_name, data.target_price, data.check_in, data.check_out);
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
@@ -170,17 +176,19 @@ async function deleteAlert(id) {
 }
 
 async function triggerScan(alertId, btn) {
+  // Get alert info for the feed
+  const alertRes = await fetch(`${API}/alerts/${alertId}`);
+  const alert = await alertRes.json();
+
   btn.disabled = true;
   btn.textContent = 'Scanning...';
+  showFeedScanning(alert.hotel_name);
 
   try {
     const res = await fetch(`${API}/scan/${alertId}`, { method: 'POST' });
     const data = await res.json();
-    if (data.best_price) {
-      showToast(`Best price: ${formatPrice(data.best_price.prix_total)} on ${data.best_price.source}`, 'success');
-    } else {
-      showToast(`Scan complete. ${data.prices_found} price(s) found.`, 'info');
-    }
+    const nights = calcNights(alert.check_in, alert.check_out);
+    showFeedResults(alert.hotel_name, data.prices, alert.target_price, nights);
     loadAlerts();
   } catch (err) {
     showToast('Scan error: ' + err.message, 'error');
@@ -188,6 +196,114 @@ async function triggerScan(alertId, btn) {
     btn.disabled = false;
     btn.textContent = 'Scan Now';
   }
+}
+
+// ===== PRICE FEED =====
+
+function showFeedScanning(hotelName) {
+  const section = document.getElementById('feed-section');
+  const list = document.getElementById('feed-list');
+  const summary = document.getElementById('feed-summary');
+  const nameEl = document.getElementById('feed-hotel-name');
+  const tsEl = document.getElementById('feed-timestamp');
+
+  section.style.display = '';
+  nameEl.textContent = hotelName;
+  tsEl.textContent = '';
+  summary.innerHTML = '';
+  list.innerHTML = `
+    <div class="feed-scanning">
+      <div class="scan-animation"></div>
+      <p>Scanning prices for ${esc(hotelName)}...</p>
+      <p class="scan-sub">Checking Isrotel, Eshet, Hotel4U, Google Hotels... this takes ~40s</p>
+    </div>
+  `;
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function runScanAndShowFeed(alertId, hotelName, targetPrice, checkIn, checkOut) {
+  try {
+    const res = await fetch(`${API}/scan/${alertId}`, { method: 'POST' });
+    const data = await res.json();
+    const nights = calcNights(checkIn, checkOut);
+    showFeedResults(hotelName, data.prices, targetPrice, nights);
+  } catch (err) {
+    document.getElementById('feed-list').innerHTML = `
+      <div class="feed-no-results">
+        <p>Scan error: ${esc(err.message)}</p>
+      </div>`;
+  }
+}
+
+function showFeedResults(hotelName, prices, targetPrice, nights) {
+  const list = document.getElementById('feed-list');
+  const summary = document.getElementById('feed-summary');
+  const tsEl = document.getElementById('feed-timestamp');
+
+  const now = new Date();
+  tsEl.textContent = `Updated ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+
+  if (!prices || prices.length === 0) {
+    list.innerHTML = `
+      <div class="feed-no-results">
+        <p style="font-size:1.5rem; margin-bottom:8px">No prices found</p>
+        <p>The scrapers didn't find any available rates right now. Prices will be checked again automatically every 2 hours.</p>
+      </div>`;
+    summary.innerHTML = '';
+    return;
+  }
+
+  // Sort by price ascending
+  const sorted = [...prices].sort((a, b) => a.prix_total - b.prix_total);
+  const bestPrice = sorted[0];
+
+  list.innerHTML = `<div class="feed-grid">${sorted.map((p, i) => {
+    const isBest = i === 0 && sorted.length > 1;
+    const perNight = nights > 0 ? Math.round(p.prix_total / nights) : null;
+    const underTarget = p.prix_total <= targetPrice;
+
+    return `
+      <div class="feed-card ${isBest ? 'feed-card-best' : ''}">
+        <div class="feed-card-source">${esc(p.source)}</div>
+        <div class="feed-card-price">
+          ${formatPrice(p.prix_total)}
+        </div>
+        ${perNight ? `<div class="feed-card-per-night">${formatPrice(perNight)} / night</div>` : ''}
+        <div class="feed-card-badges">
+          ${p.free_cancellation
+            ? '<span class="feed-badge feed-badge-cancel">Free cancellation</span>'
+            : '<span class="feed-badge feed-badge-no-cancel">No free cancel</span>'
+          }
+          ${underTarget
+            ? '<span class="feed-badge feed-badge-target-ok">Under budget</span>'
+            : '<span class="feed-badge feed-badge-target-over">Over budget</span>'
+          }
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+
+  // Summary bar
+  const bestFreeCancel = sorted.find(p => p.free_cancellation);
+  const summaryPrice = bestFreeCancel || bestPrice;
+  const savings = targetPrice - summaryPrice.prix_total;
+
+  summary.innerHTML = `
+    <div class="feed-summary">
+      <div class="feed-summary-text">
+        ${sorted.length} price${sorted.length > 1 ? 's' : ''} found &middot;
+        Best${bestFreeCancel ? ' (free cancel)' : ''}: <strong>${formatPrice(summaryPrice.prix_total)}</strong>
+        via ${esc(summaryPrice.source)}
+        ${savings > 0 ? ` &middot; <strong>${formatPrice(savings)} under budget</strong>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function calcNights(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return 0;
+  return Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
 }
 
 // ===== PRICE CHART =====

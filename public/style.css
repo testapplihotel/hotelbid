@@ -350,6 +350,186 @@ form { padding: 28px 32px 32px; }
   background-clip: text;
 }
 
+/* ===== PRICE FEED ===== */
+.feed-hotel-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--navy);
+  margin-bottom: 20px;
+}
+
+.feed-timestamp {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+.feed-scanning {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--gray-400);
+}
+
+.feed-scanning .scan-animation {
+  display: inline-block;
+  width: 40px; height: 40px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+.feed-scanning p {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.feed-scanning .scan-sub {
+  font-size: 0.85rem;
+  color: var(--gray-400);
+}
+
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.feed-card {
+  background: var(--off-white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.feed-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 4px 16px rgba(212,168,67,0.1);
+}
+
+.feed-card.feed-card-best {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(212,168,67,0.06), rgba(212,168,67,0.02));
+}
+
+.feed-card.feed-card-best::before {
+  content: 'BEST PRICE';
+  position: absolute;
+  top: 12px; right: -28px;
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 3px 32px;
+  transform: rotate(45deg);
+  letter-spacing: 0.5px;
+}
+
+.feed-card-source {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-400);
+  margin-bottom: 10px;
+}
+
+.feed-card-price {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.feed-card-price .currency { font-size: 1rem; font-weight: 600; }
+
+.feed-card-per-night {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+  margin-bottom: 12px;
+}
+
+.feed-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.feed-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.feed-badge-cancel {
+  background: var(--green-bg);
+  color: #166534;
+}
+
+.feed-badge-no-cancel {
+  background: var(--gray-100);
+  color: var(--gray-400);
+}
+
+.feed-badge-target-ok {
+  background: var(--green-bg);
+  color: #166534;
+}
+
+.feed-badge-target-over {
+  background: rgba(239,68,68,0.08);
+  color: var(--red);
+}
+
+.feed-summary {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.feed-summary-text {
+  font-size: 0.9rem;
+}
+
+.feed-summary-text strong {
+  color: var(--gold-light);
+  font-size: 1.1rem;
+}
+
+.feed-summary .btn {
+  flex-shrink: 0;
+}
+
+.feed-no-results {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--gray-400);
+}
+
+.feed-no-results p { margin-bottom: 4px; }
+
+@media (max-width: 640px) {
+  .feed-grid { grid-template-columns: 1fr; }
+  .feed-summary { flex-direction: column; text-align: center; }
+}
+
 /* ===== BOOKING CARDS ===== */
 .booking-card {
   background: var(--white);
