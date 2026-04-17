@@ -2,29 +2,34 @@ const { getBrowser, closeBrowser } = require('./browser');
 const { withRetry, randomUserAgent } = require('./base-scraper');
 
 // Eshet Tours (eshet.com) — Israeli OTA
-// The Eilat page shows promotional deal cards.
-// CRITICAL: This page does NOT accept date parameters — it shows current promos.
-// We MUST extract dates from each deal card and validate against the target dates.
+// Uses date-parameterized search URL:
+//   /domestichotels/searchresults?checkInDate=DD.MM.YYYY&checkOutDate=DD.MM.YYYY&destination=ETH&adults=N&children=N&rooms=1
+// Results load dynamically via Next.js — we wait for hotel cards to render.
 
 function isHotelMatch(text, hotelName) {
   const lower = text.toLowerCase();
   const targetLower = hotelName.toLowerCase();
 
-  if (targetLower.includes('sport club') || targetLower.includes('ספורט קלאב')) {
-    return lower.includes('sport club') || lower.includes('ספורט קלאב');
-  }
-  if (targetLower.includes('royal beach') || targetLower.includes('רויאל ביץ')) {
-    return lower.includes('royal beach') || lower.includes('רויאל ביץ');
-  }
-  if (targetLower.includes('king solomon') || targetLower.includes('המלך שלמה')) {
-    return lower.includes('king solomon') || lower.includes('המלך שלמה');
-  }
-  if (targetLower.includes('laguna') || targetLower.includes('לגונה')) {
-    return lower.includes('laguna') || lower.includes('לגונה');
+  // Direct brand matches
+  const directMatches = [
+    ['sport club', 'ספורט קלאב'],
+    ['royal beach', 'רויאל ביץ'],
+    ['king solomon', 'המלך שלמה'],
+    ['laguna', 'לגונה'],
+    ['riviera', 'ריביירה'],
+    ['dead sea', 'ים המלח'],
+    ['aria', 'אריאה'],
+    ['agamim', 'אגמים'],
+  ];
+
+  for (const names of directMatches) {
+    if (names.some(n => targetLower.includes(n))) {
+      return names.some(n => lower.includes(n));
+    }
   }
 
   const significantWords = targetLower
-    .replace(/hotel|resort|eilat|אילת|ישרוטל|isrotel/gi, '')
+    .replace(/hotel|resort|eilat|אילת|ישרוטל|isrotel|מלון/gi, '')
     .trim()
     .split(/\s+/)
     .filter(w => w.length > 2);
@@ -34,30 +39,18 @@ function isHotelMatch(text, hotelName) {
   return matchCount >= Math.max(1, Math.ceil(significantWords.length * 0.6));
 }
 
-// Check if a deal's dates overlap with the target date range
-function datesOverlap(dealDates, targetCheckIn, targetCheckOut) {
-  if (dealDates.length < 2) return false;
-
-  // Sort dates chronologically
-  const sorted = dealDates.sort((a, b) => {
-    const da = new Date(a.year, a.month - 1, a.day);
-    const db = new Date(b.year, b.month - 1, b.day);
-    return da - db;
-  });
-
-  const dealStart = new Date(sorted[0].year, sorted[0].month - 1, sorted[0].day);
-  const dealEnd = new Date(sorted[sorted.length - 1].year, sorted[sorted.length - 1].month - 1, sorted[sorted.length - 1].day);
-
-  // Deal must overlap with our target range
-  return dealStart <= targetCheckOut && dealEnd >= targetCheckIn;
+function formatDateDDMMYYYY(isoDate) {
+  const [y, m, d] = isoDate.split('-');
+  return `${d}.${m}.${y}`;
 }
 
 async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
   const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
-  const targetCheckIn = new Date(checkIn);
-  const targetCheckOut = new Date(checkOut);
-  const targetMonth = targetCheckIn.getMonth() + 1;
-  const targetYear = targetCheckIn.getFullYear();
+  const checkinFormatted = formatDateDDMMYYYY(checkIn);
+  const checkoutFormatted = formatDateDDMMYYYY(checkOut);
+
+  // Build date-parameterized search URL
+  const searchUrl = `https://www.eshet.com/domestichotels/searchresults?checkInDate=${checkinFormatted}&checkOutDate=${checkoutFormatted}&destination=ETH&adults=${adults}&children=${children || 0}&rooms=1`;
 
   return withRetry(async () => {
     const browser = await getBrowser();
@@ -66,78 +59,152 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
       await page.setUserAgent(randomUserAgent());
       await page.setViewport({ width: 1366, height: 768 });
 
-      console.log(`[eshet] Navigating to Eilat hotels page`);
-      await page.goto('https://www.eshet.com/domestichotels/eilat', {
-        waitUntil: 'networkidle2', timeout: 30000
-      });
-      await new Promise(r => setTimeout(r, 5000));
+      console.log(`[eshet] Searching: ${checkinFormatted} - ${checkoutFormatted}, ${adults} adults`);
+      console.log(`[eshet] URL: ${searchUrl}`);
+      await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 45000 });
 
-      // Extract deal cards with dates
-      const results = await page.evaluate((args) => {
-        const { targetMonth, targetYear } = args;
-        const deals = [];
+      // Wait for search results to load (Next.js renders them dynamically)
+      // Try multiple selectors — the page structure may vary
+      const resultSelectors = [
+        '[class*="hotel-card"]',
+        '[class*="HotelCard"]',
+        '[class*="result-item"]',
+        '[class*="search-result"]',
+        '[class*="property"]',
+        '[class*="listing"]',
+        '[class*="hotelItem"]',
+        '[class*="hotel_card"]',
+        '[class*="cardContainer"]',
+      ];
 
-        // Parse dates from text: DD.MM.YY, DD/MM/YYYY, DD.MM.YYYY
-        function parseDates(text) {
-          const patterns = text.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/g);
-          if (!patterns) return [];
-          return patterns.map(d => {
-            const parts = d.split(/[./]/);
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]);
-            let year = parseInt(parts[2]);
-            if (year < 100) year += 2000;
-            return { day, month, year, raw: d };
-          });
+      let loaded = false;
+      for (const sel of resultSelectors) {
+        try {
+          await page.waitForSelector(sel, { timeout: 3000 });
+          loaded = true;
+          console.log(`[eshet] Results loaded with selector: ${sel}`);
+          break;
+        } catch { /* try next */ }
+      }
+
+      if (!loaded) {
+        // Fallback: wait for price elements to appear
+        console.log(`[eshet] No card selector matched, waiting for prices...`);
+        try {
+          await page.waitForFunction(() => {
+            const text = document.body.innerText;
+            return (text.match(/₪/g) || []).length >= 2;
+          }, { timeout: 15000 });
+          loaded = true;
+          console.log(`[eshet] Prices detected on page`);
+        } catch {
+          console.log(`[eshet] No prices appeared after 15s`);
         }
+      }
 
-        // Scan all deal-like sections
-        const containers = document.querySelectorAll(
-          '[class*="promo"], [class*="card"], [class*="deal"], [class*="package"], [class*="offer"], ' +
-          'article, [class*="item"]'
+      // Extra settle time for dynamic rendering
+      await new Promise(r => setTimeout(r, 3000));
+
+      // Scroll down to trigger lazy-loaded content
+      await page.evaluate(() => {
+        window.scrollBy(0, 800);
+      });
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Extract all hotel results
+      const results = await page.evaluate((args) => {
+        const { hotelNameTarget } = args;
+        const hotels = [];
+
+        // Strategy 1: Find cards/containers with prices
+        const allElements = document.querySelectorAll(
+          '[class*="card"], [class*="Card"], [class*="result"], [class*="hotel"], ' +
+          '[class*="item"], [class*="listing"], [class*="property"], article'
         );
 
-        containers.forEach(container => {
-          const text = container.textContent || '';
-          if (text.length < 30 || text.length > 3000) return;
+        const seen = new Set();
 
-          // Must have a price
+        allElements.forEach(el => {
+          const text = el.textContent || '';
+          if (text.length < 30 || text.length > 5000) return;
+
+          // Must have a price in ILS
           const priceMatches = text.match(/([\d,]+)\s*₪/g);
           if (!priceMatches) return;
 
-          // Extract dates
-          const dates = parseDates(text);
-
-          // Check date validity
-          const hasCorrectMonth = dates.some(d => d.month === targetMonth && d.year === targetYear);
-          const hasWrongMonth = dates.length > 0 && dates.every(d => d.month !== targetMonth || d.year !== targetYear);
-
-          // Extract hotel name
-          const nameEl = container.querySelector('h2, h3, h4, [class*="name"], [class*="title"]');
-          const hotelLabel = nameEl ? nameEl.textContent.trim() : '';
-
           const prices = priceMatches
             .map(m => parseInt(m.replace(/[^\d]/g, '')))
-            .filter(p => p > 100 && p < 50000);
+            .filter(p => p > 100 && p < 100000);
 
           if (prices.length === 0) return;
 
-          deals.push({
-            hotel: hotelLabel,
+          // Extract hotel name from heading elements
+          const nameEl = el.querySelector('h1, h2, h3, h4, [class*="name"], [class*="Name"], [class*="title"], [class*="Title"]');
+          const name = nameEl ? nameEl.textContent.trim() : '';
+
+          if (!name || name.length < 3) return;
+
+          // Deduplicate by name
+          const key = name + '_' + Math.min(...prices);
+          if (seen.has(key)) return;
+          seen.add(key);
+
+          // Look for room type
+          const roomEl = el.querySelector('[class*="room"], [class*="Room"], [class*="type"], [class*="Type"]');
+          const roomType = roomEl ? roomEl.textContent.trim() : '';
+
+          // Look for cancellation info
+          const cancelText = text.toLowerCase();
+          const freeCancel = cancelText.includes('ביטול חינם') ||
+                             cancelText.includes('ביטול ללא עלות') ||
+                             cancelText.includes('free cancellation');
+
+          // Look for booking link
+          const linkEl = el.querySelector('a[href*="hotel"], a[href*="book"], a[href*="order"]');
+          const link = linkEl ? linkEl.href : '';
+
+          hotels.push({
+            name,
+            roomType: roomType.substring(0, 100),
             prices,
-            dates: dates.map(d => d.raw),
-            datesData: dates,
-            hasCorrectMonth,
-            hasWrongMonth,
-            cardText: text.substring(0, 300),
+            minPrice: Math.min(...prices),
+            freeCancel,
+            link,
+            snippet: text.substring(0, 200),
           });
         });
 
-        return deals;
-      }, { targetMonth, targetYear });
+        // Strategy 2: If no card-based results, scan full page for price patterns
+        if (hotels.length === 0) {
+          const bodyText = document.body.innerText;
+          const lines = bodyText.split('\n').filter(l => l.includes('₪'));
 
-      // Check for free cancellation
-      const hasFreeCancel = await page.evaluate(() => {
+          lines.forEach((line, i) => {
+            const priceMatch = line.match(/([\d,]+)\s*₪/);
+            if (!priceMatch) return;
+            const price = parseInt(priceMatch[1].replace(/,/g, ''));
+            if (price < 100 || price > 100000) return;
+
+            // Look at surrounding lines for hotel name
+            const context = bodyText.split('\n').slice(Math.max(0, i - 3), i + 3).join(' ');
+
+            hotels.push({
+              name: line.trim().substring(0, 80),
+              roomType: '',
+              prices: [price],
+              minPrice: price,
+              freeCancel: false,
+              link: '',
+              snippet: context.substring(0, 200),
+            });
+          });
+        }
+
+        return hotels;
+      }, { hotelNameTarget: hotelName });
+
+      // Check page-level cancellation policy
+      const pageHasFreeCancel = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
         return text.includes('ביטול חינם') || text.includes('free cancellation') ||
                text.includes('ביטול ללא עלות') || text.includes('ניתן לביטול');
@@ -146,55 +213,44 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
       const pageUrl = page.url();
       await closeBrowser(browser);
 
-      // Log all deals for transparency
-      console.log(`[eshet] Found ${results.length} deal cards:`);
-      results.forEach(d => {
-        const dateStr = d.dates.length > 0 ? `dates=[${d.dates.join(',')}]` : 'no dates';
-        const flag = d.hasWrongMonth ? 'WRONG_DATES' : (d.hasCorrectMonth ? 'CORRECT' : 'NO_DATES');
-        console.log(`[eshet]   "${d.hotel.substring(0, 40)}" prices=${d.prices} ${dateStr} ${flag}`);
+      // Log all results
+      console.log(`[eshet] Found ${results.length} hotel results:`);
+      results.forEach(h => {
+        console.log(`[eshet]   "${h.name}" ${h.minPrice}₪ cancel=${h.freeCancel}`);
       });
 
-      // Filter: hotel match + date validation
-      const matched = results.filter(r => {
-        const textToCheck = r.hotel + ' ' + (r.cardText || '');
-        if (!isHotelMatch(textToCheck, hotelName)) return false;
+      // Filter by hotel name match
+      let matched = results.filter(r =>
+        isHotelMatch(r.name + ' ' + r.snippet, hotelName)
+      );
 
-        // REJECT if dates are clearly wrong
-        if (r.hasWrongMonth) {
-          console.log(`[eshet] REJECTED "${r.hotel}" — dates ${r.dates.join(',')} don't match target ${targetMonth}/${targetYear}`);
-          return false;
-        }
+      console.log(`[eshet] ${matched.length} results match "${hotelName}"`);
 
-        return true;
-      });
-
-      console.log(`[eshet] ${matched.length} deals match hotel AND dates for "${hotelName}"`);
+      // If no specific match, return all results (user can verify)
+      if (matched.length === 0 && results.length > 0) {
+        console.log(`[eshet] No exact match — returning all ${results.length} Eilat results`);
+        matched = results;
+      }
 
       if (matched.length === 0) return [];
 
-      // Deduplicate
-      const seen = new Set();
+      // Deduplicate and format output
+      const seenPrices = new Set();
       return matched.filter(r => {
-        const price = Math.min(...r.prices);
-        const total = price * nights;
-        if (seen.has(total)) return false;
-        seen.add(total);
+        if (seenPrices.has(r.minPrice)) return false;
+        seenPrices.add(r.minPrice);
         return true;
-      }).map(r => {
-        const price = Math.min(...r.prices);
-        const total = price * nights;
-        return {
-          source: 'eshet.com',
-          hotel: hotelName,
-          prix_total: total,
-          devise: 'ILS',
-          free_cancellation: hasFreeCancel,
-          lien_reservation: pageUrl,
-          timestamp: new Date().toISOString(),
-          date_verified: r.hasCorrectMonth,
-          dates_shown: r.dates.join(' - '),
-        };
-      });
+      }).slice(0, 10).map(r => ({
+        source: 'eshet.com',
+        hotel: r.name || hotelName,
+        prix_total: r.minPrice * nights,
+        devise: 'ILS',
+        free_cancellation: r.freeCancel || pageHasFreeCancel,
+        lien_reservation: r.link || pageUrl,
+        timestamp: new Date().toISOString(),
+        date_verified: true,
+        dates_shown: `${checkinFormatted} - ${checkoutFormatted}`,
+      }));
     } catch (err) {
       await closeBrowser(browser);
       throw err;

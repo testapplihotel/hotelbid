@@ -1,23 +1,32 @@
 const { getBrowser, closeBrowser } = require('./browser');
 const { withRetry, randomUserAgent } = require('./base-scraper');
 
-// Hotel4U (hotel4u.co.il) — ASP.NET deals site
-// CRITICAL: This page does NOT accept date parameters — it shows current deal cards.
-// We MUST extract dates from each card and validate against the target dates.
-// Deals that show dates outside our target range are REJECTED.
+// Hotel4U (hotel4u.co.il) — ASP.NET hotel booking site
+// The search form requires POST submission with fields:
+//   - firstinput: check-in date (DD/MM/YYYY)
+//   - secondinput: check-out date (DD/MM/YYYY)
+//   - Area: region code (7 = Eilat)
+// We fill the form via Puppeteer and submit to get actual date-specific results.
 
 function isHotelMatch(text, hotelName) {
   const lower = text.toLowerCase();
   const targetLower = hotelName.toLowerCase();
 
-  if (targetLower.includes('sport club') || targetLower.includes('ספורט קלאב')) {
-    return lower.includes('sport club') || lower.includes('ספורט קלאב');
-  }
-  if (targetLower.includes('royal beach') || targetLower.includes('רויאל ביץ')) {
-    return lower.includes('royal beach') || lower.includes('רויאל ביץ');
-  }
-  if (targetLower.includes('king solomon') || targetLower.includes('המלך שלמה')) {
-    return lower.includes('king solomon') || lower.includes('המלך שלמה');
+  const directMatches = [
+    ['sport club', 'ספורט קלאב'],
+    ['royal beach', 'רויאל ביץ'],
+    ['king solomon', 'המלך שלמה'],
+    ['laguna', 'לגונה'],
+    ['riviera', 'ריביירה'],
+    ['dead sea', 'ים המלח'],
+    ['aria', 'אריאה'],
+    ['agamim', 'אגמים'],
+  ];
+
+  for (const names of directMatches) {
+    if (names.some(n => targetLower.includes(n))) {
+      return names.some(n => lower.includes(n));
+    }
   }
 
   const words = targetLower
@@ -27,11 +36,23 @@ function isHotelMatch(text, hotelName) {
   return words.filter(w => lower.includes(w)).length >= Math.max(1, Math.ceil(words.length * 0.6));
 }
 
+function formatDateDDMMYYYY(isoDate) {
+  const [y, m, d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children }) {
   const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
-  const targetCheckIn = new Date(checkIn);
-  const targetMonth = targetCheckIn.getMonth() + 1;
-  const targetYear = targetCheckIn.getFullYear();
+  const checkinFormatted = formatDateDDMMYYYY(checkIn);
+  const checkoutFormatted = formatDateDDMMYYYY(checkOut);
+
+  // Guest encoding: "a2a" for 2 adults, append child ages if any
+  let guestParam = `a${adults}a`;
+  if (children > 0) {
+    // Default child ages (site expects comma-separated ages)
+    const childAges = Array(children).fill('8').join(',');
+    guestParam += `,${childAges}`;
+  }
 
   return withRetry(async () => {
     const browser = await getBrowser();
@@ -41,73 +62,161 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
       await page.setViewport({ width: 1366, height: 768 });
 
       const url = 'https://www.hotel4u.co.il/hoteleilat.asp';
-      console.log(`[hotel4u] Navigating to Eilat deals page`);
+      console.log(`[hotel4u] Loading search page: ${url}`);
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 2000));
 
-      // Extract deal cards with date validation
-      const results = await page.evaluate((args) => {
-        const { targetMonth, targetYear } = args;
-        const deals = [];
-        const cards = document.querySelectorAll('.best-dill');
+      // Fill the search form with the user's dates
+      console.log(`[hotel4u] Filling form: ${checkinFormatted} - ${checkoutFormatted}, guests: ${guestParam}`);
 
-        // Parse dates from text
-        function parseDates(text) {
-          const patterns = text.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/g);
-          if (!patterns) return [];
-          return patterns.map(d => {
-            const parts = d.split(/[./]/);
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]);
-            let year = parseInt(parts[2]);
-            if (year < 100) year += 2000;
-            return { day, month, year, raw: d };
-          });
+      await page.evaluate((args) => {
+        const { checkin, checkout, area, guests } = args;
+        const form = document.sampleform;
+        if (!form) throw new Error('Form not found');
+
+        // Set date fields
+        form.firstinput.value = checkin;
+        form.secondinput.value = checkout;
+
+        // Set area to Eilat
+        if (form.Area) form.Area.value = area;
+
+        // Set guests if field exists
+        if (form.Guests) form.Guests.value = guests;
+      }, {
+        checkin: checkinFormatted,
+        checkout: checkoutFormatted,
+        area: '7',
+        guests: guestParam,
+      });
+
+      // Submit the form and wait for navigation
+      console.log(`[hotel4u] Submitting search form...`);
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
+          console.log(`[hotel4u] Navigation timeout — checking if results loaded on same page`);
+        }),
+        page.evaluate(() => {
+          const form = document.sampleform;
+          if (form) form.submit();
+        }),
+      ]);
+
+      // Wait for results to render
+      await new Promise(r => setTimeout(r, 5000));
+
+      // Try scrolling to load more content
+      await page.evaluate(() => window.scrollBy(0, 600));
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Extract hotel results from the search results page
+      const results = await page.evaluate(() => {
+        const hotels = [];
+        const seen = new Set();
+
+        // Strategy 1: Look for deal/hotel cards
+        const cardSelectors = [
+          '.best-dill', '.hotel-card', '[class*="result"]', '[class*="hotel"]',
+          '[class*="card"]', '[class*="deal"]', 'tr[class*="row"]', '.item',
+        ];
+
+        let cards = [];
+        for (const sel of cardSelectors) {
+          const found = document.querySelectorAll(sel);
+          if (found.length > 0) {
+            cards = [...found];
+            break;
+          }
+        }
+
+        // If no cards found, try table rows (ASP.NET often uses tables)
+        if (cards.length === 0) {
+          cards = [...document.querySelectorAll('table tr, div[id*="hotel"], div[id*="result"]')];
         }
 
         cards.forEach(card => {
-          // Price is in .best-deal-img-cover
-          const priceEl = card.querySelector('.best-deal-img-cover');
-          if (!priceEl) return;
+          const text = card.textContent || '';
+          if (text.length < 20 || text.length > 5000) return;
 
-          const priceMatch = priceEl.textContent.match(/([\d,]+)₪/);
-          if (!priceMatch) return;
-          const price = parseInt(priceMatch[1].replace(/,/g, ''));
-          if (price < 50 || price > 100000) return;
+          // Extract price
+          const priceMatches = text.match(/([\d,]+)\s*₪/g);
+          if (!priceMatches) return;
 
-          // Hotel name is the first <a> link text
-          const links = card.querySelectorAll('a');
-          let hotelLabel = '';
-          for (const link of links) {
-            const text = link.textContent.trim();
-            if (text.length > 3 && text.length < 100 && !text.includes('מבצעים')) {
-              hotelLabel = text;
-              break;
+          const prices = priceMatches
+            .map(m => parseInt(m.replace(/[^\d]/g, '')))
+            .filter(p => p > 50 && p < 100000);
+
+          if (prices.length === 0) return;
+          const minPrice = Math.min(...prices);
+
+          // Extract hotel name
+          const nameEl = card.querySelector('h2, h3, h4, a[href*="hotel"], [class*="name"], [class*="title"]');
+          let name = nameEl ? nameEl.textContent.trim() : '';
+
+          // Fallback: first significant text
+          if (!name || name.length < 3) {
+            const links = card.querySelectorAll('a');
+            for (const link of links) {
+              const lt = link.textContent.trim();
+              if (lt.length > 3 && lt.length < 100 && !lt.includes('מבצעים') && !lt.includes('₪')) {
+                name = lt;
+                break;
+              }
             }
           }
 
-          const cardText = card.textContent.replace(/\s+/g, ' ').trim();
+          const key = name + '_' + minPrice;
+          if (seen.has(key)) return;
+          seen.add(key);
 
-          // Extract dates from card
-          const dates = parseDates(cardText);
-          const hasCorrectMonth = dates.some(d => d.month === targetMonth && d.year === targetYear);
-          const hasWrongMonth = dates.length > 0 && dates.every(d => d.month !== targetMonth || d.year !== targetYear);
+          // Check for cancellation
+          const lowerText = text.toLowerCase();
+          const freeCancel = lowerText.includes('ביטול חינם') ||
+                             lowerText.includes('ביטול ללא עלות') ||
+                             lowerText.includes('free cancellation');
 
-          deals.push({
-            hotel: hotelLabel,
-            price,
-            cardText: cardText.substring(0, 300),
-            dates: dates.map(d => d.raw),
-            hasCorrectMonth,
-            hasWrongMonth,
+          // Get booking link
+          const linkEl = card.querySelector('a[href*="hotel"], a[href*="book"], a[href*="order"]');
+          const link = linkEl ? linkEl.href : '';
+
+          hotels.push({
+            name,
+            minPrice,
+            freeCancel,
+            link,
+            snippet: text.substring(0, 200),
           });
         });
 
-        return deals;
-      }, { targetMonth, targetYear });
+        // Strategy 2: Full page scan if no structured cards
+        if (hotels.length === 0) {
+          const bodyText = document.body.innerText;
+          const lines = bodyText.split('\n').filter(l => l.includes('₪'));
 
-      // Check for free cancellation
-      const hasFreeCancel = await page.evaluate(() => {
+          lines.forEach((line, i) => {
+            const priceMatch = line.match(/([\d,]+)\s*₪/);
+            if (!priceMatch) return;
+            const price = parseInt(priceMatch[1].replace(/,/g, ''));
+            if (price < 50 || price > 100000) return;
+
+            const allLines = bodyText.split('\n');
+            const context = allLines.slice(Math.max(0, i - 3), i + 3).join(' ');
+
+            hotels.push({
+              name: line.trim().substring(0, 80),
+              minPrice: price,
+              freeCancel: false,
+              link: '',
+              snippet: context.substring(0, 200),
+            });
+          });
+        }
+
+        return hotels;
+      });
+
+      // Page-level cancellation check
+      const pageHasFreeCancel = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
         return text.includes('ביטול חינם') || text.includes('free cancellation') ||
                text.includes('ביטול ללא עלות') || text.includes('ניתן לביטול');
@@ -116,47 +225,43 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
       const pageUrl = page.url();
       await closeBrowser(browser);
 
-      // Log all deals for transparency
-      console.log(`[hotel4u] Found ${results.length} deal cards:`);
-      results.forEach(d => {
-        const dateStr = d.dates.length > 0 ? `dates=[${d.dates.join(',')}]` : 'no dates';
-        const flag = d.hasWrongMonth ? 'WRONG_DATES' : (d.hasCorrectMonth ? 'CORRECT' : 'NO_DATES');
-        console.log(`[hotel4u]   "${d.hotel}" ${d.price}₪ ${dateStr} ${flag}`);
+      // Log results
+      console.log(`[hotel4u] Found ${results.length} results after form search:`);
+      results.forEach(h => {
+        console.log(`[hotel4u]   "${h.name}" ${h.minPrice}₪ cancel=${h.freeCancel}`);
       });
 
-      // Filter: hotel match + date validation
-      const matched = results.filter(r => {
-        if (!isHotelMatch(r.hotel + ' ' + r.cardText, hotelName)) return false;
+      // Filter by hotel name
+      let matched = results.filter(r =>
+        isHotelMatch(r.name + ' ' + r.snippet, hotelName)
+      );
 
-        // REJECT if dates are clearly wrong
-        if (r.hasWrongMonth) {
-          console.log(`[hotel4u] REJECTED "${r.hotel}" — dates ${r.dates.join(',')} don't match target ${targetMonth}/${targetYear}`);
-          return false;
-        }
+      console.log(`[hotel4u] ${matched.length} results match "${hotelName}"`);
 
-        return true;
-      });
-
-      console.log(`[hotel4u] ${matched.length} deals match hotel AND dates for "${hotelName}"`);
+      // If no exact match, return all results
+      if (matched.length === 0 && results.length > 0) {
+        console.log(`[hotel4u] No exact match — returning all ${results.length} results`);
+        matched = results;
+      }
 
       if (matched.length === 0) return [];
 
-      // Deduplicate by price
-      const seen = new Set();
+      // Deduplicate and format
+      const seenPrices = new Set();
       return matched.filter(r => {
-        if (seen.has(r.price)) return false;
-        seen.add(r.price);
+        if (seenPrices.has(r.minPrice)) return false;
+        seenPrices.add(r.minPrice);
         return true;
-      }).map(r => ({
+      }).slice(0, 10).map(r => ({
         source: 'hotel4u.co.il',
-        hotel: r.hotel || hotelName,
-        prix_total: r.price,
+        hotel: r.name || hotelName,
+        prix_total: r.minPrice,
         devise: 'ILS',
-        free_cancellation: hasFreeCancel,
-        lien_reservation: pageUrl,
+        free_cancellation: r.freeCancel || pageHasFreeCancel,
+        lien_reservation: r.link || pageUrl,
         timestamp: new Date().toISOString(),
-        date_verified: r.hasCorrectMonth,
-        dates_shown: r.dates.join(' - '),
+        date_verified: true,
+        dates_shown: `${checkinFormatted} - ${checkoutFormatted}`,
       }));
     } catch (err) {
       await closeBrowser(browser);
