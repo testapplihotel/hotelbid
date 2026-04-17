@@ -4,8 +4,38 @@ const { withRetry, randomUserAgent } = require('./base-scraper');
 // Eshet Tours (eshet.com) — Next.js SPA, major Israeli OTA
 // The Eilat page shows promotional deal cards for various hotels.
 // Each promo card has: hotel name, price (per night per couple), dates, meal plan.
-// Card class pattern: _desktop-module__promo-*
-// We need to find the parent card, extract hotel name, and only keep Sport Club matches.
+
+// Match specifically for the target hotel — avoid false positives
+function isHotelMatch(text, hotelName) {
+  const lower = text.toLowerCase();
+  const targetLower = hotelName.toLowerCase();
+
+  // Extract distinctive hotel identifier (e.g., "sport club" from "Isrotel Sport Club Eilat")
+  // Check for specific name parts, not just brand
+  if (targetLower.includes('sport club') || targetLower.includes('ספורט קלאב')) {
+    return lower.includes('sport club') || lower.includes('ספורט קלאב');
+  }
+  if (targetLower.includes('royal beach') || targetLower.includes('רויאל ביץ')) {
+    return lower.includes('royal beach') || lower.includes('רויאל ביץ');
+  }
+  if (targetLower.includes('king solomon') || targetLower.includes('המלך שלמה')) {
+    return lower.includes('king solomon') || lower.includes('המלך שלמה');
+  }
+  if (targetLower.includes('laguna') || targetLower.includes('לגונה')) {
+    return lower.includes('laguna') || lower.includes('לגונה');
+  }
+
+  // Generic fallback: require at least 2 significant words to match
+  const significantWords = targetLower
+    .replace(/hotel|resort|eilat|אילת|ישרוטל|isrotel/gi, '')
+    .trim()
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+
+  if (significantWords.length === 0) return false;
+  const matchCount = significantWords.filter(w => lower.includes(w)).length;
+  return matchCount >= Math.max(1, Math.ceil(significantWords.length * 0.6));
+}
 
 async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
   const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
@@ -36,31 +66,23 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
       });
       await new Promise(r => setTimeout(r, 5000));
 
-      // Extract promotional cards with hotel name matching
+      // Extract promotional cards with STRICT hotel name matching
       const results = await page.evaluate((targetHotel, nights) => {
         const prices = [];
-        const targetLower = targetHotel.toLowerCase();
 
-        // Get the full page text and split into sections by looking for promo containers
-        // Each promo card parent contains: hotel name + price + dates + meal plan
+        // Strategy 1: promo containers with parent card walk
         const promoContainers = document.querySelectorAll('[class*="promo-price-container"]');
 
         promoContainers.forEach(container => {
-          // Walk up to find the parent card that contains the hotel name
+          // Walk up to find the IMMEDIATE parent card (limit to 5 levels, max 1000 chars)
           let parent = container;
-          for (let i = 0; i < 10 && parent.parentElement; i++) {
+          for (let i = 0; i < 5 && parent.parentElement; i++) {
             parent = parent.parentElement;
-            // Check if this parent contains hotel identification
             const text = parent.textContent || '';
-            if (text.length > 200 && text.length < 2000) break;
+            if (text.length > 100 && text.length < 1000) break;
           }
 
           const cardText = parent.textContent || '';
-          const cardLower = cardText.toLowerCase();
-
-          // Check if this card is for our target hotel
-          const isMatch = cardLower.includes('sport') || cardLower.includes('ספורט קלאב') ||
-                         (cardLower.includes('ישרוטל') && cardLower.includes('ספורט'));
 
           // Extract price from the promo container
           const priceEl = container.querySelector('[class*="promo-price___"]');
@@ -68,27 +90,23 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
             const priceText = priceEl.textContent.replace(/[^\d]/g, '');
             const pricePerNight = parseInt(priceText);
             if (pricePerNight > 100 && pricePerNight < 10000) {
-              // These are per-night per-couple prices
-              const hotelName = cardText.substring(0, 100).trim().split('\n')[0] || 'Eshet Deal';
+              const hotelLabel = cardText.substring(0, 80).trim().split('\n')[0] || 'Eshet Deal';
               prices.push({
-                hotel: hotelName,
+                hotel: hotelLabel,
                 pricePerNight,
                 totalPrice: pricePerNight * nights,
-                match: isMatch,
-                context: cardText.substring(0, 200),
+                cardText: cardText.substring(0, 300),
               });
             }
           }
         });
 
-        // Also check for any specific Sport Club links/sections on the page
+        // Strategy 2: scan all links/sections for Sport Club
         const allLinks = document.querySelectorAll('a');
         allLinks.forEach(link => {
           const href = link.href || '';
           const text = link.textContent || '';
-          if ((text.includes('ספורט קלאב') || text.includes('Sport Club') || href.includes('sport-club')) &&
-              !prices.some(p => p.match)) {
-            // Found a Sport Club link — extract nearby prices
+          if (text.includes('ספורט קלאב') || text.includes('Sport Club') || href.includes('sport-club')) {
             const parent = link.closest('[class*="card"], [class*="item"], [class*="deal"], section, article') || link.parentElement;
             if (parent) {
               const priceMatch = parent.textContent.match(/(\d{1,3}(?:,\d{3})*)\s*₪/);
@@ -99,8 +117,7 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
                     hotel: 'ישרוטל ספורט קלאב',
                     pricePerNight: price,
                     totalPrice: price * nights,
-                    match: true,
-                    context: parent.textContent.substring(0, 200),
+                    cardText: parent.textContent.substring(0, 200),
                   });
                 }
               }
@@ -118,22 +135,29 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
         apiPrices.push(...found);
       }
 
+      // Check for free cancellation terms on the page
       const hasFreeCancel = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
-        return text.includes('ביטול חינם') || text.includes('free cancellation') || text.includes('ביטול ללא עלות');
+        return text.includes('ביטול חינם') || text.includes('free cancellation') ||
+               text.includes('ביטול ללא עלות') || text.includes('ניתן לביטול') ||
+               text.includes('ביטול עד') || text.includes('גמישות ביטול');
       });
 
       const pageUrl = page.url();
       await closeBrowser(browser);
 
-      // Combine page and API results, prefer matched
+      // Apply strict hotel matching to DOM-extracted results
       const allResults = [...results, ...apiPrices];
-      const matched = allResults.filter(r => r.match);
-      const output = matched.length > 0 ? matched : [];
+      const matched = allResults.filter(r => {
+        const textToCheck = r.hotel + ' ' + (r.cardText || '');
+        return isHotelMatch(textToCheck, hotelName);
+      });
+
+      console.log(`[eshet] Found ${allResults.length} total prices, ${matched.length} match "${hotelName}"`);
 
       // Deduplicate by total price
       const seen = new Set();
-      const deduped = output.filter(r => {
+      const deduped = matched.filter(r => {
         const key = r.totalPrice || r.price;
         if (seen.has(key)) return false;
         seen.add(key);
@@ -142,13 +166,12 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
 
       return deduped.map(r => ({
         source: 'eshet.com',
-        hotel: r.hotel || hotelName,
+        hotel: hotelName,
         prix_total: r.totalPrice || r.price,
         devise: 'ILS',
         free_cancellation: hasFreeCancel,
         lien_reservation: pageUrl,
         timestamp: new Date().toISOString(),
-        _note: 'promotional price, may not match exact dates',
       }));
     } catch (err) {
       await closeBrowser(browser);
@@ -159,20 +182,21 @@ async function scrapeEshet({ hotelName, checkIn, checkOut, adults, children }) {
 
 function extractPricesFromJson(data, targetHotel, nights) {
   const results = [];
-  const targetLower = targetHotel.toLowerCase();
 
   function traverse(obj, depth = 0) {
     if (depth > 8 || !obj || typeof obj !== 'object') return;
 
     const name = obj.name || obj.hotelName || obj.title || obj.hotel_name || '';
-    const nameLower = (typeof name === 'string' ? name : '').toLowerCase();
-    const isMatch = nameLower.includes('sport') || nameLower.includes('ספורט') ||
-                   (nameLower.includes('ישרוטל') && nameLower.includes('ספורט'));
+    const nameStr = typeof name === 'string' ? name : '';
 
-    if (isMatch) {
+    if (nameStr && isHotelMatch(nameStr, targetHotel)) {
       const price = obj.price || obj.totalPrice || obj.total_price || obj.rate || 0;
       if (typeof price === 'number' && price > 100) {
-        results.push({ hotel: name, price, totalPrice: price > 5000 ? price : price * nights, match: true });
+        results.push({
+          hotel: nameStr,
+          price,
+          totalPrice: price > 5000 ? price : price * nights,
+        });
       }
     }
 

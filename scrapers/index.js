@@ -17,14 +17,14 @@ const BATCH_DELAY_MS = 3000;
 
 // Tier 1: OTAs and aggregators that list multiple hotel chains
 // SerpApi first — it uses HTTP, not a browser, so it doesn't count toward the limit
+// DISABLED: daka90.co.il — blocks headless browsers (empty page), wastes browser sessions
+// DISABLED: travelist.co.il — search URL returns 404, primarily flights/packages
+// DISABLED: hotels.co.il — reservation engine blocks headless browsers, results.cfm returns 404
 const TIER1_SCRAPERS = [
   { name: 'serpapi', fn: searchSerpApi, usesBrowser: false },
   { name: 'isrotel.co.il', fn: scrapeIsrotel, usesBrowser: true },
-  { name: 'daka90.co.il', fn: scrapeDaka90, usesBrowser: true },
-  { name: 'hotels.co.il', fn: scrapeHotelsCoIl, usesBrowser: true },
   { name: 'eshet.com', fn: scrapeEshet, usesBrowser: true },
   { name: 'hotel4u.co.il', fn: scrapeHotel4u, usesBrowser: true },
-  { name: 'travelist.co.il', fn: scrapeTravelist, usesBrowser: true },
 ];
 
 // Tier 2: Chain-specific sites (only useful if searching for THEIR hotels)

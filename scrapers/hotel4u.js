@@ -1,14 +1,32 @@
 const { getBrowser, closeBrowser } = require('./browser');
 const { withRetry, randomUserAgent } = require('./base-scraper');
 
-// Hotel4U (hotel4u.co.il) — ASP.NET site
-// Uses CheckSearch() function, guest format: "a2a,10,8" (2 adults, kids ages 10,8)
-// Search goes to SearchAnswerbar.asp or hoteleilat.asp
-// Direct hotel pages: /hotel/[hotel-name].asp
+// Hotel4U (hotel4u.co.il) — ASP.NET deals site
+// The Eilat page (hoteleilat.asp) shows current deal cards.
+// DOM structure: .best-dill cards containing:
+//   - .best-deal-img-cover (price overlay, format "3,076₪")
+//   - First <a> link = hotel name
+// Deals are date-specific promotions — may not always have every hotel.
 
-function formatDateDDMMYYYY(isoDate) {
-  const [y, m, d] = isoDate.split('-');
-  return `${d}/${m}/${y}`;
+function isHotelMatch(text, hotelName) {
+  const lower = text.toLowerCase();
+  const targetLower = hotelName.toLowerCase();
+
+  if (targetLower.includes('sport club') || targetLower.includes('ספורט קלאב')) {
+    return lower.includes('sport club') || lower.includes('ספורט קלאב');
+  }
+  if (targetLower.includes('royal beach') || targetLower.includes('רויאל ביץ')) {
+    return lower.includes('royal beach') || lower.includes('רויאל ביץ');
+  }
+  if (targetLower.includes('king solomon') || targetLower.includes('המלך שלמה')) {
+    return lower.includes('king solomon') || lower.includes('המלך שלמה');
+  }
+
+  const words = targetLower
+    .replace(/hotel|resort|eilat|אילת|ישרוטל|isrotel|מלון/gi, '')
+    .trim().split(/\s+/).filter(w => w.length > 2);
+  if (words.length === 0) return false;
+  return words.filter(w => lower.includes(w)).length >= Math.max(1, Math.ceil(words.length * 0.6));
 }
 
 async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children }) {
@@ -19,80 +37,73 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
       await page.setUserAgent(randomUserAgent());
       await page.setViewport({ width: 1366, height: 768 });
 
-      // Go to Eilat hotels page
       const url = 'https://www.hotel4u.co.il/hoteleilat.asp';
+      console.log(`[hotel4u] Navigating to Eilat deals page`);
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
       await new Promise(r => setTimeout(r, 3000));
 
-      // Try to fill and submit the search form
-      await page.evaluate((checkIn, checkOut, adults, children) => {
-        // Set date inputs
-        const dateInputs = document.querySelectorAll('input[type="text"], input[name*="date"], input[id*="date"]');
-        dateInputs.forEach(input => {
-          const name = (input.name || input.id || '').toLowerCase();
-          if (name.includes('checkin') || name.includes('date-range200') || name.includes('from')) {
-            input.value = checkIn;
-          }
-          if (name.includes('checkout') || name.includes('date-range201') || name.includes('to')) {
-            input.value = checkOut;
-          }
-        });
+      // Extract deal cards using the confirmed DOM structure
+      const results = await page.evaluate(() => {
+        const deals = [];
+        const cards = document.querySelectorAll('.best-dill');
 
-        // Set guest counts via select elements
-        const selects = document.querySelectorAll('select');
-        selects.forEach(sel => {
-          const name = (sel.name || sel.id || '').toLowerCase();
-          if (name.includes('adult')) sel.value = String(adults);
-          if (name.includes('child') || name.includes('kid')) sel.value = String(children);
-        });
-      }, formatDateDDMMYYYY(checkIn), formatDateDDMMYYYY(checkOut), adults, children);
-
-      // Submit search
-      const searchBtn = await page.$('input[type="submit"], button[type="submit"], .btn-search, [onclick*="CheckSearch"]');
-      if (searchBtn) {
-        await searchBtn.click();
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
-      }
-
-      await new Promise(r => setTimeout(r, 5000));
-
-      const results = await page.evaluate((targetHotel) => {
-        const prices = [];
-        const targetLower = targetHotel.toLowerCase();
-
-        // Hotel4U shows deal cards
-        const cards = document.querySelectorAll('[class*="deal"], [class*="hotel"], [class*="item"], [class*="result"], [class*="card"], .offer, .deal');
         cards.forEach(card => {
-          const nameEl = card.querySelector('[class*="name"], [class*="title"], h2, h3, h4, a[class*="title"]');
-          const priceEl = card.querySelector('[class*="price"], [class*="Price"], [class*="cost"]');
-          if (priceEl) {
-            const name = nameEl ? nameEl.textContent.trim() : '';
-            const priceText = priceEl.textContent.replace(/[^\d.,]/g, '').replace(',', '');
-            const price = parseFloat(priceText);
-            if (price > 50 && price < 100000) {
-              const nameLower = name.toLowerCase();
-              const isMatch = nameLower.includes('sport') || nameLower.includes('ספורט') ||
-                             nameLower.includes('isrotel') || nameLower.includes('ישרוטל');
-              prices.push({ hotel: name, price, match: isMatch });
+          // Price is in .best-deal-img-cover
+          const priceEl = card.querySelector('.best-deal-img-cover');
+          if (!priceEl) return;
+
+          const priceMatch = priceEl.textContent.match(/([\d,]+)₪/);
+          if (!priceMatch) return;
+          const price = parseInt(priceMatch[1].replace(/,/g, ''));
+          if (price < 50 || price > 100000) return;
+
+          // Hotel name is the first <a> link text
+          const links = card.querySelectorAll('a');
+          let hotelLabel = '';
+          for (const link of links) {
+            const text = link.textContent.trim();
+            if (text.length > 3 && text.length < 100 && !text.includes('מבצעים')) {
+              hotelLabel = text;
+              break;
             }
           }
+
+          const cardText = card.textContent.replace(/\s+/g, ' ').trim();
+
+          deals.push({
+            hotel: hotelLabel,
+            price,
+            cardText: cardText.substring(0, 300),
+          });
         });
 
-        return prices;
-      }, hotelName);
+        return deals;
+      });
 
+      // Check for free cancellation
       const hasFreeCancel = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
-        return text.includes('ביטול חינם') || text.includes('free cancellation');
+        return text.includes('ביטול חינם') || text.includes('free cancellation') ||
+               text.includes('ביטול ללא עלות') || text.includes('ניתן לביטול');
       });
 
       const pageUrl = page.url();
       await closeBrowser(browser);
 
-      const matched = results.filter(r => r.match);
-      const output = matched.length > 0 ? matched : results.slice(0, 5);
+      // Filter for target hotel
+      const matched = results.filter(r => isHotelMatch(r.hotel + ' ' + r.cardText, hotelName));
 
-      return output.map(r => ({
+      console.log(`[hotel4u] Found ${results.length} deals, ${matched.length} match "${hotelName}"`);
+
+      if (matched.length === 0) return [];
+
+      // Deduplicate by price
+      const seen = new Set();
+      return matched.filter(r => {
+        if (seen.has(r.price)) return false;
+        seen.add(r.price);
+        return true;
+      }).map(r => ({
         source: 'hotel4u.co.il',
         hotel: r.hotel || hotelName,
         prix_total: r.price,

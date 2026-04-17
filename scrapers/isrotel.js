@@ -3,8 +3,8 @@ const { withRetry, randomUserAgent } = require('./base-scraper');
 
 // Isrotel search results page:
 //   https://www.isrotel.co.il/searchresult/?checkin=DD/MM/YYYY&checkout=DD/MM/YYYY&adults=N&children=N&hotel=CODE
-// This returns server-rendered HTML with room prices (per night per couple).
-// The page also lazy-loads more rooms via searchPopularRooms() JS function.
+// DOM uses "am-*" class prefix (e.g., am-room-dropdown-header, am-filter-*).
+// Prices shown as "325\n₪" (per night per couple). Multiply by nights for total.
 
 const HOTEL_CODES = {
   'sport club': 'SP',
@@ -54,19 +54,17 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
       const results = await page.evaluate((nights) => {
         const rooms = [];
 
-        // Look for room/price cards — Isrotel uses price elements with ₪
-        // Pattern from screenshot: "17,373 ← 16,459 ₪" (original ← discounted)
-        // or just "1,024 ₪"
+        // Strategy 1: Isrotel uses "am-*" class-prefixed elements
         const priceElements = document.querySelectorAll(
           '[class*="price"], [class*="Price"], [class*="rate"], [class*="cost"], ' +
-          '[class*="room-result"], [class*="search-result"], [class*="result-item"]'
+          '[class*="am-"], [class*="room-result"], [class*="search-result"]'
         );
 
         const allPrices = [];
 
         priceElements.forEach(el => {
           const text = el.textContent || '';
-          // Find all ₪ prices in this element
+          // Prices appear as "325\n₪" or "1,024 ₪" — match across whitespace/newlines
           const matches = text.match(/([\d,]+)\s*₪/g);
           if (matches) {
             matches.forEach(m => {
@@ -78,7 +76,7 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
           }
         });
 
-        // Also scan the full page body for prices
+        // Strategy 2: scan full body text for ₪ prices (handles newlines)
         if (allPrices.length === 0) {
           const bodyText = document.body.innerText;
           const bodyMatches = bodyText.match(/([\d,]+)\s*₪/g);
@@ -92,24 +90,21 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
           }
         }
 
-        // Find room cards with name + price
+        // Strategy 3: find room cards with name + price
         const cards = document.querySelectorAll(
-          '[class*="room"], [class*="result"], [class*="card"], [class*="offer"]'
+          '[class*="room"], [class*="result"], [class*="card"], [class*="offer"], [class*="am-"]'
         );
         cards.forEach(card => {
           const cardText = card.textContent || '';
           const nameEl = card.querySelector('[class*="name"], [class*="title"], h2, h3, h4');
           const roomName = nameEl ? nameEl.textContent.trim() : '';
 
-          // Find the discounted/final price (usually the last ₪ price or the highlighted one)
           const priceMatches = cardText.match(/([\d,]+)\s*₪/g);
           if (priceMatches && roomName) {
-            // If multiple prices, the last or smallest is typically the discounted price
             const cardPrices = priceMatches.map(m => parseInt(m.replace(/[^\d]/g, '')))
               .filter(p => p > 200 && p < 100000);
 
             if (cardPrices.length > 0) {
-              // The actual price is usually the smaller one (discounted)
               const finalPrice = Math.min(...cardPrices);
               rooms.push({ name: roomName, pricePerNight: finalPrice, totalPrice: finalPrice * nights });
             }
@@ -122,15 +117,20 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
         return { rooms, allPrices: uniquePrices };
       }, nights);
 
-      // Check for free cancellation
-      const hasFreeCancel = await page.evaluate(() => {
+      // Check for explicit non-refundable markers
+      const hasNonRefundable = await page.evaluate(() => {
         const text = document.body.innerText.toLowerCase();
-        return text.includes('ביטול חינם') || text.includes('free cancellation') || text.includes('ביטול ללא');
+        return text.includes('ללא ביטול') || text.includes('לא ניתן לביטול') || text.includes('non-refundable');
       });
 
       await closeBrowser(browser);
 
-      // The search results page shows ALL Isrotel hotels.
+      // Isrotel's standard publicly-listed rates on their website include free cancellation.
+      // The search results page does NOT display cancellation text — the policy is shown
+      // only on the room detail/booking step.
+      // We default to true (Isrotel's flexible rate policy) unless non-refundable markers found.
+      const freeCancellation = !hasNonRefundable;
+
       // Filter to only our target hotel by matching the hotel code name.
       const targetKeywords = [];
       for (const [key, code] of Object.entries(HOTEL_CODES)) {
@@ -140,7 +140,6 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
       const output = [];
 
       if (results.rooms.length > 0) {
-        // Filter rooms to only our target hotel
         const targetRooms = results.rooms.filter(room => {
           const nameLower = room.name.toLowerCase();
           return targetKeywords.some(kw => nameLower.includes(kw));
@@ -159,7 +158,7 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
               hotel: hotelName,
               prix_total: room.totalPrice,
               devise: 'ILS',
-              free_cancellation: hasFreeCancel,
+              free_cancellation: freeCancellation,
               lien_reservation: searchUrl,
               timestamp: new Date().toISOString(),
             });
@@ -167,22 +166,29 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
         }
       }
 
-      // If we didn't find specific room matches, the raw prices may include our hotel
+      // Fallback: use sorted unique prices from the page
       if (output.length === 0 && results.allPrices.length > 0) {
-        // Use the median price as a reasonable estimate
-        const mid = Math.floor(results.allPrices.length / 2);
-        const total = results.allPrices[mid] * nights;
-        if (total > 500 && total < 200000) {
-          output.push({
-            source: 'isrotel.co.il',
-            hotel: hotelName,
-            prix_total: total,
-            devise: 'ILS',
-            free_cancellation: hasFreeCancel,
-            lien_reservation: searchUrl,
-            timestamp: new Date().toISOString(),
-            _note: 'estimated from search results page',
-          });
+        // Use per-night prices, pick lowest reasonable ones
+        const reasonable = results.allPrices.filter(p => p >= 200);
+        if (reasonable.length > 0) {
+          // Return up to 3 price points (cheapest, median, most expensive)
+          const indices = [0, Math.floor(reasonable.length / 2), reasonable.length - 1];
+          const seen = new Set();
+          for (const idx of indices) {
+            const total = reasonable[idx] * nights;
+            if (total > 500 && total < 200000 && !seen.has(total)) {
+              seen.add(total);
+              output.push({
+                source: 'isrotel.co.il',
+                hotel: hotelName,
+                prix_total: total,
+                devise: 'ILS',
+                free_cancellation: freeCancellation,
+                lien_reservation: searchUrl,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
         }
       }
 
