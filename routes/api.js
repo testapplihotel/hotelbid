@@ -127,6 +127,16 @@ router.post('/scan/:alertId', async (req, res) => {
   }
 });
 
+// GET /api/health — simple health check for monitoring
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    version: require('../package.json').version || '1.0.0',
+  });
+});
+
 // GET /api/scraper-status — check which scrapers are up/down
 router.get('/scraper-status', (req, res) => {
   const db = getDb();

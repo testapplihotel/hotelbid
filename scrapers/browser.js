@@ -11,10 +11,19 @@ const puppeteer = require('puppeteer');
 async function getBrowser() {
   const token = process.env.BROWSERLESS_KEY;
   if (token) {
-    const browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${token}`,
-    });
-    return browser;
+    try {
+      const browser = await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${token}`,
+      });
+      return browser;
+    } catch (err) {
+      console.warn(`[browser] Browserless.io connection failed: ${err.message}`);
+      console.warn('[browser] Falling back to local Chromium...');
+      return puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+    }
   }
   return puppeteer.launch({
     headless: 'new',
@@ -29,11 +38,17 @@ async function getBrowser() {
  * - Local browsers should use close().
  */
 async function closeBrowser(browser) {
-  const token = process.env.BROWSERLESS_KEY;
-  if (token) {
-    browser.disconnect();
-  } else {
-    await browser.close();
+  try {
+    // Check if this is a remote (Browserless) or local browser
+    // Remote browsers have a wsEndpoint containing 'browserless'
+    const wsEndpoint = browser.wsEndpoint?.() || '';
+    if (wsEndpoint.includes('browserless')) {
+      browser.disconnect();
+    } else {
+      await browser.close();
+    }
+  } catch {
+    // Browser may already be closed/disconnected
   }
 }
 

@@ -49,7 +49,22 @@ function getRelevantScrapers(hotelName) {
   return scrapers;
 }
 
-async function scrapeAll(params) {
+// Global timeout for the entire scan (2 minutes)
+const SCAN_TIMEOUT_MS = 120000;
+
+async function scrapeAllWithTimeout(params) {
+  return Promise.race([
+    scrapeAllInternal(params),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Scan timed out after 120s')), SCAN_TIMEOUT_MS)
+    ),
+  ]).catch(err => {
+    console.error(`[scrapers] ${err.message} — returning partial results`);
+    return [];
+  });
+}
+
+async function scrapeAllInternal(params) {
   const scrapers = getRelevantScrapers(params.hotelName);
   console.log(`[scrapers] Scanning ${scrapers.length} relevant sources for "${params.hotelName}"...`);
 
@@ -103,8 +118,31 @@ async function scrapeAll(params) {
     }
   }
 
-  console.log(`[scrapers] Found ${allPrices.length} price(s) across all sources`);
-  return allPrices;
+  // Price validation: filter out suspiciously low prices
+  const validated = validatePrices(allPrices, params);
+  console.log(`[scrapers] Found ${allPrices.length} price(s), ${validated.length} valid after filtering`);
+  return validated;
+}
+
+function validatePrices(prices, params) {
+  if (!params.checkIn || !params.checkOut) return prices;
+
+  const nights = Math.ceil(
+    (new Date(params.checkOut) - new Date(params.checkIn)) / (1000 * 60 * 60 * 24)
+  );
+  if (nights <= 0) return prices;
+
+  // Minimum credible price per night for an Eilat hotel (ILS)
+  const MIN_PER_NIGHT = 80;
+  const minTotal = MIN_PER_NIGHT * nights;
+
+  return prices.filter(p => {
+    if (p.prix_total < minTotal) {
+      console.warn(`[scrapers] EXCLUDED ${p.source}: ${p.prix_total} ILS is suspiciously low (${Math.round(p.prix_total / nights)} ILS/night for ${nights} nights, min ${MIN_PER_NIGHT}/night)`);
+      return false;
+    }
+    return true;
+  });
 }
 
 function getBestPrice(prices, { freeCancellationOnly = true } = {}) {
@@ -115,5 +153,8 @@ function getBestPrice(prices, { freeCancellationOnly = true } = {}) {
   if (filtered.length === 0) return null;
   return filtered.reduce((best, p) => p.prix_total < best.prix_total ? p : best);
 }
+
+// scrapeAll is the public API — wraps scrapeAllInternal with a global timeout
+const scrapeAll = scrapeAllWithTimeout;
 
 module.exports = { scrapeAll, getBestPrice, getRelevantScrapers, TIER1_SCRAPERS, CHAIN_SCRAPERS };

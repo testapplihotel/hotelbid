@@ -15,7 +15,22 @@ async function scanAlert(alert) {
     children: alert.children,
   };
 
+  const scanStart = Date.now();
   const prices = await scrapeAll(params);
+  const scanDuration = ((Date.now() - scanStart) / 1000).toFixed(1);
+
+  // Log scan summary
+  console.log(`\n[scanner] ===== SCAN SUMMARY for "${alert.hotel_name}" =====`);
+  console.log(`[scanner] Duration: ${scanDuration}s | Results: ${prices.length} price(s)`);
+  if (prices.length > 0) {
+    prices.forEach(p => {
+      const cancel = p.free_cancellation ? 'FREE CANCEL' : 'no cancel';
+      console.log(`[scanner]   ${p.source.padEnd(20)} ${String(p.prix_total).padStart(6)} ILS  ${cancel}`);
+    });
+  } else {
+    console.log('[scanner]   No prices found');
+  }
+  console.log(`[scanner] ==========================================\n`);
 
   // Save all prices to history
   const insertPrice = db.prepare(`
@@ -62,6 +77,7 @@ async function scanAllAlerts() {
   }
 
   console.log(`[scanner] Scanning ${alerts.length} active alert(s)...`);
+  const cycleStart = Date.now();
 
   for (const alert of alerts) {
     try {
@@ -70,6 +86,9 @@ async function scanAllAlerts() {
       console.error(`[scanner] Error scanning alert #${alert.id}:`, err.message);
     }
   }
+
+  const cycleDuration = ((Date.now() - cycleStart) / 1000).toFixed(1);
+  console.log(`[scanner] Cycle complete — ${alerts.length} alert(s) scanned in ${cycleDuration}s`);
 }
 
 function startCron() {
