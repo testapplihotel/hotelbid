@@ -399,6 +399,9 @@ form { padding: 28px 32px 32px; }
 }
 
 .feed-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
   background: var(--off-white);
   border: 1.5px solid var(--gray-100);
   border-radius: var(--radius-sm);
@@ -406,11 +409,17 @@ form { padding: 28px 32px 32px; }
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .feed-card:hover {
   border-color: var(--gold);
   box-shadow: 0 4px 16px rgba(212,168,67,0.1);
+  transform: translateY(-2px);
+}
+
+.feed-card:hover .feed-card-cta {
+  color: var(--gold-dark);
 }
 
 .feed-card.feed-card-best {
@@ -453,6 +462,25 @@ form { padding: 28px 32px 32px; }
   font-size: 0.8rem;
   color: var(--gray-400);
   margin-bottom: 12px;
+}
+
+.feed-card-link-icon {
+  font-size: 0.85rem;
+  opacity: 0.5;
+  transition: var(--transition);
+}
+
+.feed-card:hover .feed-card-link-icon {
+  opacity: 1;
+  color: var(--gold);
+}
+
+.feed-card-cta {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  transition: var(--transition);
 }
 
 .feed-card-badges {

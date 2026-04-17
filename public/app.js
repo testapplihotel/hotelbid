@@ -263,9 +263,10 @@ function showFeedResults(hotelName, prices, targetPrice, nights) {
     const perNight = nights > 0 ? Math.round(p.prix_total / nights) : null;
     const underTarget = p.prix_total <= targetPrice;
 
+    const url = p.lien_reservation || '#';
     return `
-      <div class="feed-card ${isBest ? 'feed-card-best' : ''}">
-        <div class="feed-card-source">${esc(p.source)}</div>
+      <a class="feed-card ${isBest ? 'feed-card-best' : ''}" href="${esc(url)}" target="_blank" rel="noopener">
+        <div class="feed-card-source">${esc(p.source)} <span class="feed-card-link-icon">&#8599;</span></div>
         <div class="feed-card-price">
           ${formatPrice(p.prix_total)}
         </div>
@@ -280,7 +281,8 @@ function showFeedResults(hotelName, prices, targetPrice, nights) {
             : '<span class="feed-badge feed-badge-target-over">Over budget</span>'
           }
         </div>
-      </div>
+        <div class="feed-card-cta">Verify on site &rarr;</div>
+      </a>
     `;
   }).join('')}</div>`;
 
