@@ -1,0 +1,7 @@
+# Skip Chromium install — we use Browserless.io cloud browser
+[variables]
+PUPPETEER_SKIP_DOWNLOAD = "true"
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+
+[phases.setup]
+aptPkgs = []

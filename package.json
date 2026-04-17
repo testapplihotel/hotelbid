@@ -14,7 +14,7 @@
     "express": "^4.21.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.0",
-    "puppeteer": "^23.0.0",
+    "puppeteer-core": "^23.0.0",
     "serpapi": "^2.1.0"
   }
 }

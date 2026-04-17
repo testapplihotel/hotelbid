@@ -1,12 +1,16 @@
-const puppeteer = require('puppeteer');
+// Use puppeteer-core in production (no bundled Chromium — uses Browserless.io)
+// Falls back to full puppeteer locally if available
+let puppeteer;
+try {
+  puppeteer = require('puppeteer-core');
+} catch {
+  puppeteer = require('puppeteer');
+}
 
 /**
  * Returns a Puppeteer browser instance.
  * - If BROWSERLESS_KEY is set, connects to Browserless.io (cloud browser).
- * - Otherwise, launches a local Chromium instance.
- *
- * Each call returns a fresh browser. The caller should call closeBrowser()
- * when done to properly disconnect or close.
+ * - Otherwise, launches a local Chromium instance (dev only).
  */
 async function getBrowser() {
   const token = process.env.BROWSERLESS_KEY;
@@ -18,29 +22,24 @@ async function getBrowser() {
       return browser;
     } catch (err) {
       console.warn(`[browser] Browserless.io connection failed: ${err.message}`);
+      // In production, no local Chromium available — rethrow
+      if (process.env.NODE_ENV === 'production') throw err;
       console.warn('[browser] Falling back to local Chromium...');
-      return puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
     }
   }
+  // Local dev fallback — requires full puppeteer or system Chromium
   return puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: process.env.CHROME_PATH || undefined,
   });
 }
 
 /**
  * Properly closes/disconnects the browser.
- * - Browserless connections should use disconnect() to release the session
- *   without killing the remote browser process.
- * - Local browsers should use close().
  */
 async function closeBrowser(browser) {
   try {
-    // Check if this is a remote (Browserless) or local browser
-    // Remote browsers have a wsEndpoint containing 'browserless'
     const wsEndpoint = browser.wsEndpoint?.() || '';
     if (wsEndpoint.includes('browserless')) {
       browser.disconnect();
