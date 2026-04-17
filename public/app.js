@@ -272,6 +272,10 @@ function showFeedResults(hotelName, prices, targetPrice, nights) {
         </div>
         ${perNight ? `<div class="feed-card-per-night">${formatPrice(perNight)} / night</div>` : ''}
         <div class="feed-card-badges">
+          ${p.date_verified
+            ? '<span class="feed-badge feed-badge-verified">Dates verified</span>'
+            : '<span class="feed-badge feed-badge-unverified">Dates unverified</span>'
+          }
           ${p.free_cancellation
             ? '<span class="feed-badge feed-badge-cancel">Free cancellation</span>'
             : '<span class="feed-badge feed-badge-no-cancel">No free cancel</span>'
@@ -281,6 +285,7 @@ function showFeedResults(hotelName, prices, targetPrice, nights) {
             : '<span class="feed-badge feed-badge-target-over">Over budget</span>'
           }
         </div>
+        ${p.dates_shown ? `<div class="feed-card-dates">${esc(p.dates_shown)}</div>` : ''}
         <div class="feed-card-cta">Verify on site &rarr;</div>
       </a>
     `;

@@ -209,6 +209,8 @@ async function scrapeIsrotel({ hotelName, checkIn, checkOut, adults, children })
             free_cancellation: freeCancellation,
             lien_reservation: searchUrl,
             timestamp: new Date().toISOString(),
+            date_verified: true,
+            dates_shown: `${checkinFormatted} - ${checkoutFormatted}`,
           });
         }
       }

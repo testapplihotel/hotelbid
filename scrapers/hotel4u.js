@@ -2,11 +2,9 @@ const { getBrowser, closeBrowser } = require('./browser');
 const { withRetry, randomUserAgent } = require('./base-scraper');
 
 // Hotel4U (hotel4u.co.il) — ASP.NET deals site
-// The Eilat page (hoteleilat.asp) shows current deal cards.
-// DOM structure: .best-dill cards containing:
-//   - .best-deal-img-cover (price overlay, format "3,076₪")
-//   - First <a> link = hotel name
-// Deals are date-specific promotions — may not always have every hotel.
+// CRITICAL: This page does NOT accept date parameters — it shows current deal cards.
+// We MUST extract dates from each card and validate against the target dates.
+// Deals that show dates outside our target range are REJECTED.
 
 function isHotelMatch(text, hotelName) {
   const lower = text.toLowerCase();
@@ -30,6 +28,11 @@ function isHotelMatch(text, hotelName) {
 }
 
 async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children }) {
+  const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
+  const targetCheckIn = new Date(checkIn);
+  const targetMonth = targetCheckIn.getMonth() + 1;
+  const targetYear = targetCheckIn.getFullYear();
+
   return withRetry(async () => {
     const browser = await getBrowser();
     try {
@@ -42,10 +45,25 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
       await new Promise(r => setTimeout(r, 3000));
 
-      // Extract deal cards using the confirmed DOM structure
-      const results = await page.evaluate(() => {
+      // Extract deal cards with date validation
+      const results = await page.evaluate((args) => {
+        const { targetMonth, targetYear } = args;
         const deals = [];
         const cards = document.querySelectorAll('.best-dill');
+
+        // Parse dates from text
+        function parseDates(text) {
+          const patterns = text.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/g);
+          if (!patterns) return [];
+          return patterns.map(d => {
+            const parts = d.split(/[./]/);
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            let year = parseInt(parts[2]);
+            if (year < 100) year += 2000;
+            return { day, month, year, raw: d };
+          });
+        }
 
         cards.forEach(card => {
           // Price is in .best-deal-img-cover
@@ -70,15 +88,23 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
 
           const cardText = card.textContent.replace(/\s+/g, ' ').trim();
 
+          // Extract dates from card
+          const dates = parseDates(cardText);
+          const hasCorrectMonth = dates.some(d => d.month === targetMonth && d.year === targetYear);
+          const hasWrongMonth = dates.length > 0 && dates.every(d => d.month !== targetMonth || d.year !== targetYear);
+
           deals.push({
             hotel: hotelLabel,
             price,
             cardText: cardText.substring(0, 300),
+            dates: dates.map(d => d.raw),
+            hasCorrectMonth,
+            hasWrongMonth,
           });
         });
 
         return deals;
-      });
+      }, { targetMonth, targetYear });
 
       // Check for free cancellation
       const hasFreeCancel = await page.evaluate(() => {
@@ -90,10 +116,28 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
       const pageUrl = page.url();
       await closeBrowser(browser);
 
-      // Filter for target hotel
-      const matched = results.filter(r => isHotelMatch(r.hotel + ' ' + r.cardText, hotelName));
+      // Log all deals for transparency
+      console.log(`[hotel4u] Found ${results.length} deal cards:`);
+      results.forEach(d => {
+        const dateStr = d.dates.length > 0 ? `dates=[${d.dates.join(',')}]` : 'no dates';
+        const flag = d.hasWrongMonth ? 'WRONG_DATES' : (d.hasCorrectMonth ? 'CORRECT' : 'NO_DATES');
+        console.log(`[hotel4u]   "${d.hotel}" ${d.price}₪ ${dateStr} ${flag}`);
+      });
 
-      console.log(`[hotel4u] Found ${results.length} deals, ${matched.length} match "${hotelName}"`);
+      // Filter: hotel match + date validation
+      const matched = results.filter(r => {
+        if (!isHotelMatch(r.hotel + ' ' + r.cardText, hotelName)) return false;
+
+        // REJECT if dates are clearly wrong
+        if (r.hasWrongMonth) {
+          console.log(`[hotel4u] REJECTED "${r.hotel}" — dates ${r.dates.join(',')} don't match target ${targetMonth}/${targetYear}`);
+          return false;
+        }
+
+        return true;
+      });
+
+      console.log(`[hotel4u] ${matched.length} deals match hotel AND dates for "${hotelName}"`);
 
       if (matched.length === 0) return [];
 
@@ -111,6 +155,8 @@ async function scrapeHotel4u({ hotelName, checkIn, checkOut, adults, children })
         free_cancellation: hasFreeCancel,
         lien_reservation: pageUrl,
         timestamp: new Date().toISOString(),
+        date_verified: r.hasCorrectMonth,
+        dates_shown: r.dates.join(' - '),
       }));
     } catch (err) {
       await closeBrowser(browser);

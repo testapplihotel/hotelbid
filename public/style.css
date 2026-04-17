@@ -519,6 +519,23 @@ form { padding: 28px 32px 32px; }
   color: var(--red);
 }
 
+.feed-badge-verified {
+  background: var(--green-bg);
+  color: #166534;
+}
+
+.feed-badge-unverified {
+  background: rgba(245,158,11,0.12);
+  color: #92400e;
+}
+
+.feed-card-dates {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
 .feed-summary {
   margin-top: 24px;
   padding: 20px 24px;
